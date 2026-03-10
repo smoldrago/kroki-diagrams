@@ -1,0 +1,48 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+
+UpdateElementStyle("person", $bgColor="#08427B", $fontColor="#FFFFFF", $borderColor="#073B6F")
+UpdateElementStyle("external_person", $bgColor="#6C7A89", $fontColor="#FFFFFF", $borderColor="#5A6773")
+UpdateElementStyle("system", $bgColor="#1168BD", $fontColor="#FFFFFF", $borderColor="#3C7FC0")
+UpdateElementStyle("external_system", $bgColor="#8E8E93", $fontColor="#FFFFFF", $borderColor="#7D7D82")
+UpdateElementStyle("container", $bgColor="#438DD5", $fontColor="#FFFFFF", $borderColor="#3C7FC0")
+UpdateElementStyle("container_db", $bgColor="#FFF3E0", $fontColor="#1A1A2E", $borderColor="#F5A623")
+UpdateBoundaryStyle($bgColor="#FAFAFA", $fontColor="#1A1A2E", $borderColor="#B8B8B8")
+UpdateRelStyle($lineColor="#666666", $textColor="#333333")
+
+Person(trader, "Quant Trader", "Runs prompts, watches risk, and approves execution")
+Person(analyst, "Ops Analyst", "Reviews anomalies and replay traces")
+
+System_Boundary(platform, "Autonomous Trading Platform") {
+  Container(web, "Trader Console", "Next.js", "Prompt composition, scenario review, drill-down state")
+  Container(api, "Orchestration API", "FastAPI", "Auth, request routing, audit logging, state fan-out")
+  Container(worker, "Execution Workers", "Cloud Run Jobs", "Prompt assembly, model calls, broker command generation")
+  Container(risk, "Risk Engine", "Python Service", "Exposure checks, policy evaluation, order guards")
+  Container(cache, "Response Cache", "Redis", "Warm answer reuse and short-lived coordination")
+  ContainerDb(db, "Trading Store", "Postgres", "Users, prompts, strategies, orders, traces")
+  Container(obs, "Observability Hub", "OpenTelemetry + ClickHouse", "Latency, prompt traces, replay diagnostics")
+}
+
+System_Ext(vertex, "Vertex AI", "Reasoning and extraction models")
+System_Ext(exchange, "Exchange APIs", "Market data and execution venues")
+System_Ext(notify, "Notification Fabric", "Slack and webhooks")
+
+Rel(trader, web, "Uses")
+Rel(analyst, web, "Reviews incidents in")
+Rel(web, api, "Calls")
+Rel(api, cache, "Checks warm answers in")
+Rel(api, db, "Reads and writes")
+Rel(api, worker, "Dispatches async plans to")
+Rel(worker, risk, "Validates candidate actions with")
+Rel(worker, vertex, "Requests completions from")
+Rel(worker, exchange, "Fetches prices and submits orders to")
+Rel(worker, db, "Persists artifacts in")
+Rel(worker, obs, "Publishes traces to")
+Rel(risk, db, "Reads positions from")
+Rel(api, notify, "Publishes user-facing updates to")
+Rel(obs, analyst, "Supports replay for")
+
+SHOW_LEGEND()
+@enduml

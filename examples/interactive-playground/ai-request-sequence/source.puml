@@ -1,0 +1,85 @@
+@startuml
+<style>
+root {
+  FontName Arial
+  FontSize 13
+  BackgroundColor #FAFAFA
+  LineColor #555555
+}
+title {
+  FontSize 16
+  FontStyle bold
+  FontColor #1A1A2E
+}
+arrow {
+  LineColor #4A90D9
+  FontColor #333333
+  FontSize 11
+}
+actor {
+  BackGroundColor #08427B
+  LineColor #4A90D9
+  FontColor #FFFFFF
+}
+participant {
+  BackGroundColor #EEF4FB
+  LineColor #4A90D9
+  FontColor #1A1A2E
+}
+database {
+  BackGroundColor #FFF3E0
+  LineColor #F5A623
+  FontColor #1A1A2E
+}
+queue {
+  BackGroundColor #F3E5F5
+  LineColor #7E57C2
+  FontColor #1A1A2E
+}
+group {
+  BackGroundColor #F8FBFF
+  LineColor #A0AEC0
+  FontColor #1A1A2E
+}
+</style>
+title AI Request Sequence
+
+actor Trader
+participant "Web App" as Web
+participant "API Gateway" as API
+database "Cache" as Cache
+queue "Job Queue" as Queue
+participant "Worker Pool" as Worker
+participant "Vertex AI" as Model
+database "Cloud SQL" as DB
+participant "Alert Bot" as Alert
+
+Trader -> Web : Submit scenario + symbols
+Web -> API : POST /v1/ai/requests
+API -> Cache : Lookup recent answer
+
+alt cached recommendation exists
+  Cache --> API : Warm response + metadata
+  API --> Web : Return result instantly
+  Web --> Trader : Render recommendation
+else needs recompute
+  Cache --> API : Cache miss
+  API -> DB : Save request envelope
+  API -> Queue : Enqueue orchestration job
+  Queue -> Worker : Deliver compute task
+  loop until all data sources are ready
+    Worker -> DB : Fetch latest positions
+    Worker -> Worker : Normalize prompt context
+  end
+  Worker -> Model : Request plan + rationale
+  Model --> Worker : Structured response
+  Worker -> DB : Persist answer and diagnostics
+  Worker -> Alert : Emit completion webhook
+  Alert --> Web : Push refresh notification
+  Web -> API : GET /v1/ai/requests/:id
+  API -> DB : Read finalized answer
+  DB --> API : Answer + trace
+  API --> Web : Return enriched result
+  Web --> Trader : Reveal recommendation
+end
+@enduml

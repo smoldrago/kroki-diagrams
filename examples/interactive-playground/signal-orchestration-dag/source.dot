@@ -1,0 +1,93 @@
+digraph G {
+  graph [
+    rankdir=LR,
+    splines=ortho,
+    nodesep=0.8,
+    ranksep=0.9,
+    bgcolor="#FAFAFA",
+    fontname="Helvetica",
+    fontsize=13,
+    pad="0.45",
+    overlap=false,
+    remincross=true
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    fillcolor="#EEF4FB",
+    color="#4C6A92",
+    fontname="Helvetica",
+    fontsize=12,
+    fontcolor="#1A1A2E",
+    margin="0.18,0.10"
+  ];
+
+  edge [
+    color="#555555",
+    penwidth=1.8,
+    arrowsize=0.8,
+    fontname="Helvetica",
+    fontsize=10,
+    fontcolor="#333333"
+  ];
+
+  subgraph cluster_inputs {
+    label="Market and State Inputs";
+    color="#9AB7D3";
+    fillcolor="#F8FBFF";
+    fontname="Helvetica";
+    fontsize=12;
+    style="rounded,filled";
+    pricing [label="Pricing Feed", fillcolor="#EEF4FB"];
+    account [label="Account Snapshot", fillcolor="#EEF4FB"];
+    news [label="News Signal", fillcolor="#EEF4FB"];
+    { rank=same; pricing; account; news }
+  }
+
+  subgraph cluster_core {
+    label="Signal Core";
+    color="#3C7FC0";
+    fillcolor="#EAF3FF";
+    fontname="Helvetica";
+    fontsize=12;
+    style="rounded,filled";
+    normalize [label="Normalize Inputs", fillcolor="#1168BD", fontcolor="#FFFFFF", color="#3C7FC0"];
+    features [label="Feature Builder", fillcolor="#1168BD", fontcolor="#FFFFFF", color="#3C7FC0"];
+    ranker [label="Signal Ranker", fillcolor="#1168BD", fontcolor="#FFFFFF", color="#3C7FC0"];
+    planner [label="Execution Planner", fillcolor="#1168BD", fontcolor="#FFFFFF", color="#3C7FC0"];
+    { rank=same; normalize; features; ranker; planner }
+  }
+
+  subgraph cluster_controls {
+    label="Safety and Delivery";
+    color="#D8A545";
+    fillcolor="#FFF8EE";
+    fontname="Helvetica";
+    fontsize=12;
+    style="rounded,filled";
+    risk [label="Risk Gate", fillcolor="#F3E5F5", color="#7E57C2"];
+    review [label="Human Review", fillcolor="#08427B", fontcolor="#FFFFFF", color="#073B6F"];
+    broker [label="Broker Router", fillcolor="#FFF3E0", color="#F5A623"];
+    audit [label="Audit Trail", fillcolor="#FFF3E0", color="#F5A623"];
+    alerts [label="Alerts", fillcolor="#F3E5F5", color="#7E57C2"];
+    { rank=same; risk; review; broker; audit; alerts }
+  }
+
+  pricing -> normalize [label="ticks"];
+  account -> normalize [label="positions"];
+  news -> normalize [label="context"];
+  normalize -> features;
+  features -> ranker;
+  ranker -> planner [label="top candidates"];
+  planner -> risk [label="proposed actions"];
+  risk -> broker [label="approved"];
+  risk -> review [label="edge case"];
+  review -> broker [label="manual approve"];
+  review -> planner [label="revise", color="#7E57C2", fontcolor="#7E57C2"];
+  broker -> audit [label="execution trace"];
+  planner -> audit [label="plan trace"];
+  broker -> alerts [label="fills and rejects"];
+  audit -> alerts [label="incident digest"];
+  alerts -> account [label="state refresh", color="#7E57C2", fontcolor="#7E57C2"];
+}

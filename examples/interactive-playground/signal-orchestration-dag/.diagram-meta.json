@@ -1,0 +1,7 @@
+{
+  "title": "Signal Orchestration DAG",
+  "engine": "graphviz",
+  "format": "svg",
+  "summary": "Rendered with graphviz.",
+  "interactive_tier": "full"
+}

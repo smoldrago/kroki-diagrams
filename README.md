@@ -1,3 +1,7 @@
+<p>
+  <img src="banner.png" alt="Kroki Diagrams overview banner" width="1200">
+</p>
+
 # kroki-diagrams
 
 **A distributable agent skill for turning architecture ideas, flows, schemas, and dependency maps into clean, versionable diagrams.**
@@ -16,6 +20,12 @@ That gives you a few big advantages:
 - you can use the best diagram engine for each use case instead of forcing everything into one tool
 
 This skill packages that workflow for coding agents so they do not just dump raw diagram syntax or pick a random engine. It helps them choose the right diagram type, style it sanely, render it, and optionally make it interactive.
+
+## Quick Demo
+
+<video src="showcase.mp4" controls width="1200"></video>
+
+If GitHub does not render the repo-local video inline on your browser, it will still open or download the file directly.
 
 ## What This Skill Actually Does
 
@@ -155,6 +165,30 @@ What you get back:
 - per-artifact metadata
 - an updated collection `index.html` by default
 
+## Bundled Examples
+
+This repo includes a ready-to-open sample set under [`examples/interactive-playground/`](examples/interactive-playground).
+
+It includes medium-complex examples across the main supported engines:
+
+- PlantUML sequence flow
+- C4-PlantUML container architecture
+- Graphviz orchestration DAG
+- Mermaid operational flowchart
+- ERD schema diagram
+
+Start with:
+
+- [`examples/interactive-playground/index.html`](examples/interactive-playground/index.html)
+- [`examples/interactive-playground/README.md`](examples/interactive-playground/README.md)
+
+To rebuild the sample outputs from source:
+
+```bash
+cd examples/interactive-playground
+./render_all.sh
+```
+
 ## Why Use This Instead Of Plain Mermaid Everywhere?
 
 Because different diagram jobs want different engines.
@@ -222,12 +256,16 @@ install-pi.sh
 - Interactivity depends on inline SVG output and engine-emitted metadata
 - Not every Kroki engine is supported equally
 - Some diagram problems are better split into multiple diagrams instead of one giant graph
-- Claude marketplace installation format is included, but I have not verified end-to-end marketplace ingestion from the public repo yet
 
 ## Notes
 
 - This repo does not add slash commands yet
 - The plugin wrapper is intentionally minimal and focused on distributing the skill itself
+
+## Credits
+
+- [Kroki](https://kroki.io/) for the rendering service that turns text-based diagram source into generated outputs across multiple diagram engines
+- The PlantUML, C4-PlantUML, Graphviz, Mermaid, and ERD ecosystems that make the underlying diagram formats possible
 
 ## License
 

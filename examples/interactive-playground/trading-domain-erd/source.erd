@@ -1,0 +1,50 @@
+[Users]
+  *id {label: "UUID"}
+  email {label: "TEXT"}
+  tier {label: "TEXT"}
+
+[Portfolios]
+  *id {label: "UUID"}
+  user_id {label: "UUID"}
+  mandate {label: "TEXT"}
+  base_ccy {label: "TEXT"}
+
+[BrokerAccounts]
+  *id {label: "UUID"}
+  portfolio_id {label: "UUID"}
+  venue {label: "TEXT"}
+  account_ref {label: "TEXT"}
+
+[StrategyRuns]
+  *id {label: "UUID"}
+  portfolio_id {label: "UUID"}
+  prompt_id {label: "UUID"}
+  status {label: "TEXT"}
+  started_at {label: "TIMESTAMP"}
+
+[Orders]
+  *id {label: "UUID"}
+  strategy_run_id {label: "UUID"}
+  broker_account_id {label: "UUID"}
+  symbol {label: "TEXT"}
+  side {label: "TEXT"}
+  status {label: "TEXT"}
+
+[Fills]
+  *id {label: "UUID"}
+  order_id {label: "UUID"}
+  qty {label: "NUMERIC"}
+  px {label: "NUMERIC"}
+
+[Alerts]
+  *id {label: "UUID"}
+  strategy_run_id {label: "UUID"}
+  severity {label: "TEXT"}
+  channel {label: "TEXT"}
+
+Users 1--* Portfolios
+Portfolios 1--* BrokerAccounts
+Portfolios 1--* StrategyRuns
+StrategyRuns 1--* Orders
+Orders 1--* Fills
+StrategyRuns 1--* Alerts

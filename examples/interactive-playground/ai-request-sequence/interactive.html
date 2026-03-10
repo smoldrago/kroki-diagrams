@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Request Sequence</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+    :root {
+      --bg: #e7edf4;
+      --bg-deep: #d9e2ec;
+      --panel: rgba(247, 250, 252, 0.9);
+      --panel-strong: rgba(244, 248, 251, 0.94);
+      --text: #142033;
+      --muted: #607087;
+      --label-highlight: #6d28d9;
+      --dim-opacity: 0.42;
+      --node-shadow: drop-shadow(0 0 9px rgba(120, 119, 255, 0.35));
+      --panel-border: rgba(69, 89, 115, 0.18);
+      --focus-ring: rgba(38, 132, 255, 0.28);
+      --toolbar-shadow: rgba(31, 45, 61, 0.12);
+      --canvas-grid: rgba(108, 130, 158, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(57, 135, 255, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(18, 35, 58, 0.08), transparent 30%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+    }
+
+    .shell {
+      width: 100%;
+      padding: 14px;
+    }
+
+    .stage {
+      position: relative;
+      overflow: hidden;
+      padding: 10px;
+      min-height: calc(100vh - 28px);
+      border-radius: 20px;
+      border: 1px solid var(--panel-border);
+      background: linear-gradient(180deg, rgba(248, 251, 253, 0.82), rgba(238, 244, 249, 0.8));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.72),
+        0 18px 40px rgba(30, 41, 59, 0.08);
+    }
+
+    .stage:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .canvas-toolbar {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 5;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border-radius: 14px;
+      background: rgba(246, 249, 252, 0.9);
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 10px 26px var(--toolbar-shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .canvas-toolbar button {
+      border: 1px solid rgba(78, 97, 122, 0.16);
+      background: linear-gradient(180deg, #fdfefe, #eef3f8);
+      color: var(--text);
+      border-radius: 10px;
+      min-width: 40px;
+      height: 36px;
+      padding: 0 10px;
+      font-family: "IBM Plex Mono", "SFMono-Regular", "Menlo", monospace;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .canvas-toolbar button:hover {
+      background: linear-gradient(180deg, #ffffff, #f2f6fb);
+      border-color: rgba(38, 132, 255, 0.3);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .canvas-toolbar button:active {
+      transform: translateY(0);
+    }
+
+    .canvas-toolbar button:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .canvas-viewport {
+      position: relative;
+      height: calc(100vh - 48px);
+      min-height: 0;
+      overflow: hidden;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.74), transparent 24%),
+        repeating-linear-gradient(0deg, var(--canvas-grid) 0 1px, transparent 1px 28px),
+        repeating-linear-gradient(90deg, var(--canvas-grid) 0 1px, transparent 1px 28px),
+        linear-gradient(180deg, rgba(248, 251, 254, 0.94), rgba(233, 239, 246, 0.92));
+      cursor: default;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .canvas-viewport.is-pan-mode {
+      cursor: grab;
+    }
+
+    .canvas-viewport.is-dragging {
+      cursor: grabbing;
+    }
+
+    .canvas-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      overflow: visible;
+    }
+
+    .canvas-content svg {
+      display: block;
+      width: max-content;
+      max-width: none;
+      height: auto;
+      overflow: visible;
+      background: transparent !important;
+    }
+
+    .canvas-status {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      z-index: 4;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(245, 248, 251, 0.88);
+      border: 1px solid var(--panel-border);
+      color: var(--muted);
+      font-family: "IBM Plex Mono", "SFMono-Regular", "Menlo", monospace;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      box-shadow: 0 10px 24px rgba(31, 45, 61, 0.08);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .interactive-node {
+      cursor: pointer;
+      transition: opacity 160ms ease, filter 160ms ease, transform 160ms ease;
+      transform-origin: center center;
+    }
+
+    .interactive-edge {
+      transition: opacity 160ms ease, filter 160ms ease;
+    }
+
+    .interactive-node.is-dimmed,
+    .interactive-edge.is-dimmed {
+      opacity: var(--dim-opacity);
+    }
+
+    .interactive-node.is-active,
+    .interactive-node.is-connected,
+    .interactive-edge.is-connected {
+      opacity: 1;
+    }
+
+    .interactive-node.is-active {
+      filter: var(--node-shadow);
+    }
+
+    .interactive-node.is-active rect,
+    .interactive-node.is-active ellipse,
+    .interactive-node.is-active circle,
+    .interactive-node.is-active polygon,
+    .interactive-node.is-active path {
+      stroke-width: 2.2px !important;
+      animation: rainbow-stroke 3.4s linear infinite;
+    }
+
+    .interactive-node.is-connected rect,
+    .interactive-node.is-connected ellipse,
+    .interactive-node.is-connected circle,
+    .interactive-node.is-connected polygon,
+    .interactive-node.is-connected path {
+      stroke-width: 1.7px !important;
+      animation: rainbow-stroke 3.4s linear infinite;
+    }
+
+    .interactive-edge.is-connected path,
+    .interactive-edge.is-connected line,
+    .interactive-edge.is-connected polyline {
+      stroke-width: 2.2px !important;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px rgba(93, 92, 255, 0.25));
+    }
+
+    .interactive-edge.is-connected polygon {
+      animation: rainbow-fill 3.4s linear infinite;
+    }
+
+    .interactive-edge.is-connected text,
+    .interactive-edge.is-connected tspan {
+      fill: var(--label-highlight) !important;
+      stroke: none !important;
+      font-weight: 700 !important;
+      animation: none !important;
+      filter: none !important;
+    }
+
+    .interactive-edge.is-connected foreignObject,
+    .interactive-edge.is-connected foreignObject * {
+      color: var(--label-highlight) !important;
+      font-weight: 700 !important;
+      animation: none !important;
+      filter: none !important;
+      text-shadow: none !important;
+    }
+
+    .interactive-edge.edge-flow-forward path,
+    .interactive-edge.edge-flow-forward line,
+    .interactive-edge.edge-flow-forward polyline {
+      stroke-dasharray: 11 7;
+      animation: rainbow-stroke 3.4s linear infinite, flow-forward 850ms linear infinite;
+    }
+
+    .interactive-edge.edge-flow-reverse path,
+    .interactive-edge.edge-flow-reverse line,
+    .interactive-edge.edge-flow-reverse polyline {
+      stroke-dasharray: 11 7;
+      animation: rainbow-stroke 3.4s linear infinite, flow-reverse 850ms linear infinite;
+    }
+
+    .interactive-edge.edge-neutral path,
+    .interactive-edge.edge-neutral line,
+    .interactive-edge.edge-neutral polyline {
+      stroke-dasharray: 9 7;
+      animation: rainbow-stroke 3.4s linear infinite, flow-neutral 1150ms ease-in-out infinite;
+    }
+
+    @keyframes rainbow-stroke {
+      0% { stroke: #ff3b30; }
+      20% { stroke: #ff9500; }
+      40% { stroke: #34c759; }
+      60% { stroke: #0a84ff; }
+      80% { stroke: #5e5ce6; }
+      100% { stroke: #ff2d55; }
+    }
+
+    @keyframes rainbow-fill {
+      0% { fill: #ff3b30; stroke: #ff3b30; }
+      20% { fill: #ff9500; stroke: #ff9500; }
+      40% { fill: #34c759; stroke: #34c759; }
+      60% { fill: #0a84ff; stroke: #0a84ff; }
+      80% { fill: #5e5ce6; stroke: #5e5ce6; }
+      100% { fill: #ff2d55; stroke: #ff2d55; }
+    }
+
+    @keyframes flow-forward {
+      to { stroke-dashoffset: -18; }
+    }
+
+    @keyframes flow-reverse {
+      to { stroke-dashoffset: 18; }
+    }
+
+    @keyframes flow-neutral {
+      0% { stroke-dashoffset: 0; filter: brightness(1); }
+      50% { stroke-dashoffset: 10; filter: brightness(1.2); }
+      100% { stroke-dashoffset: 20; filter: brightness(1); }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        padding: 8px;
+      }
+
+      .canvas-toolbar {
+        top: 12px;
+        right: 12px;
+        gap: 6px;
+        padding: 6px;
+      }
+
+      .canvas-toolbar button {
+        min-width: 36px;
+        height: 34px;
+        padding: 0 8px;
+      }
+
+      .canvas-viewport {
+        height: calc(100vh - 28px);
+      }
+
+      .canvas-status {
+        left: 12px;
+        bottom: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="stage" id="diagram-stage" tabindex="0" aria-label="Interactive diagram canvas">
+      <div class="canvas-toolbar" aria-label="Canvas controls">
+        <button type="button" id="zoom-out" aria-label="Zoom out">-</button>
+        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+        <button type="button" id="fit-view" aria-label="Fit to screen">Fit</button>
+        <button type="button" id="actual-size" aria-label="Reset to one hundred percent">100%</button>
+      </div>
+      <div class="canvas-viewport" id="diagram-viewport">
+        <div class="canvas-content" id="diagram-content">
+          <svg xmlns="http://www.w3.org/2000/svg" contentStyleType="text/css" data-diagram-type="SEQUENCE" height="901px" preserveAspectRatio="none" style="width:1146px;height:901px;" version="1.1" viewBox="0 0 1146 901" width="1146px" zoomAndPan="magnify" data-interactive-engine="plantuml" data-interactive-tier="full"><title>AI Request Sequence</title><defs /><g><rect fill="none" height="28.625" style="stroke:#555555;stroke-width:1;" width="201.3125" x="473.6417" y="10" /><text fill="#1A1A2E" font-family="Arial" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="191.3125" x="478.6417" y="29.8516">AI Request Sequence</text><rect fill="#F8FBFF" height="587.9531" style="stroke:#A0AEC0;stroke-width:1.5;" width="1129.5959" x="10" y="217.1719" /><rect fill="#F8FBFF" height="490.2734" style="stroke:none;stroke-width:1;" width="1129.5959" x="10" y="314.8516" /><rect fill="#F8FBFF" height="83.875" style="stroke:#A0AEC0;stroke-width:1.5;" width="347.7244" x="710.8252" y="446.2031" /><g class="interactive-node participant-lifeline" data-entity-uid="part1" data-qualified-name="Trader" id="part1-lifeline" data-node-id="part1"><g><title>Trader</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="40.4233" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="44" x2="44" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part2" data-qualified-name="Web" id="part2-lifeline" data-node-id="part2"><g><title>Web App</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="215.1738" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="218.8572" x2="218.8572" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part3" data-qualified-name="API" id="part3-lifeline" data-node-id="part3"><g><title>API Gateway</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="364.5244" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="368.4614" x2="368.4614" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part4" data-qualified-name="Cache" id="part4-lifeline" data-node-id="part4"><g><title>Cache</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="544.603" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="548.3889" x2="548.3889" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part5" data-qualified-name="Queue" id="part5-lifeline" data-node-id="part5"><g><title>Job Queue</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="621.2566" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="624.8171" x2="624.8171" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part6" data-qualified-name="Worker" id="part6-lifeline" data-node-id="part6"><g><title>Worker Pool</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="763.0823" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="766.8252" x2="766.8252" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part7" data-qualified-name="Model" id="part7-lifeline" data-node-id="part7"><g><title>Vertex AI</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="924.6145" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="927.6726" x2="927.6726" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part8" data-qualified-name="DB" id="part8-lifeline" data-node-id="part8"><g><title>Cloud SQL</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="1008.053" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="1011.5564" x2="1011.5564" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant-lifeline" data-entity-uid="part9" data-qualified-name="Alert" id="part9-lifeline" data-node-id="part9"><g><title>Alert Bot</title><rect fill="#000000" fill-opacity="0.00000" height="702.3672" width="8" x="1090.0728" y="119.7578" /><line style="stroke:#555555;stroke-width:0.5;stroke-dasharray:5,5;" x1="1093.5496" x2="1093.5496" y1="119.7578" y2="822.125" /></g></g><g class="interactive-node participant participant-head" data-entity-uid="part1" data-qualified-name="Trader" id="part1-head" data-node-id="part1"><text fill="#FFFFFF" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="42.8467" x="20" y="116.6919">Trader</text><ellipse cx="44.4233" cy="53.125" fill="#08427B" rx="8" ry="8" style="stroke:#4A90D9;stroke-width:0.5;" /><path d="M44.4233,61.125 L44.4233,88.125 M31.4233,69.125 L57.4233,69.125 M44.4233,88.125 L31.4233,103.125 M44.4233,88.125 L57.4233,103.125" fill="none" style="stroke:#4A90D9;stroke-width:0.5;" /></g><g class="participant participant-tail" data-entity-uid="part1" data-qualified-name="Trader" id="part1-tail"><text fill="#FFFFFF" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="42.8467" x="20" y="833.1919">Trader</text><ellipse cx="44.4233" cy="844.7578" fill="#08427B" rx="8" ry="8" style="stroke:#4A90D9;stroke-width:0.5;" /><path d="M44.4233,852.7578 L44.4233,879.7578 M31.4233,860.7578 L57.4233,860.7578 M44.4233,879.7578 L31.4233,894.7578 M44.4233,879.7578 L57.4233,894.7578" fill="none" style="stroke:#4A90D9;stroke-width:0.5;" /></g><g class="interactive-node participant participant-head" data-entity-uid="part2" data-qualified-name="Web" id="part2-head" data-node-id="part2"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="72.6333" x="182.8572" y="89.625" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="58.6333" x="189.8572" y="108.6919">Web App</text></g><g class="participant participant-tail" data-entity-uid="part2" data-qualified-name="Web" id="part2-tail"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="72.6333" x="182.8572" y="821.125" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="58.6333" x="189.8572" y="840.1919">Web App</text></g><g class="interactive-node participant participant-head" data-entity-uid="part3" data-qualified-name="API" id="part3-head" data-node-id="part3"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="96.126" x="320.4614" y="89.625" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="82.126" x="327.4614" y="108.6919">API Gateway</text></g><g class="participant participant-tail" data-entity-uid="part3" data-qualified-name="API" id="part3-tail"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="96.126" x="320.4614" y="821.125" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="82.126" x="327.4614" y="840.1919">API Gateway</text></g><g class="interactive-node participant participant-head" data-entity-uid="part4" data-qualified-name="Cache" id="part4-head" data-node-id="part4"><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="40.4282" x="525.3889" y="116.6919">Cache</text><path d="M530.603,68.625 C530.603,58.625 548.603,58.625 548.603,58.625 C548.603,58.625 566.603,58.625 566.603,68.625 L566.603,94.625 C566.603,104.625 548.603,104.625 548.603,104.625 C548.603,104.625 530.603,104.625 530.603,94.625 L530.603,68.625" fill="#FFF3E0" style="stroke:#F5A623;stroke-width:0.5;" /><path d="M530.603,68.625 C530.603,78.625 548.603,78.625 548.603,78.625 C548.603,78.625 566.603,78.625 566.603,68.625" fill="none" style="stroke:#F5A623;stroke-width:0.5;" /></g><g class="participant participant-tail" data-entity-uid="part4" data-qualified-name="Cache" id="part4-tail"><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="40.4282" x="525.3889" y="833.1919">Cache</text><path d="M530.603,846.2578 C530.603,836.2578 548.603,836.2578 548.603,836.2578 C548.603,836.2578 566.603,836.2578 566.603,846.2578 L566.603,872.2578 C566.603,882.2578 548.603,882.2578 548.603,882.2578 C548.603,882.2578 530.603,882.2578 530.603,872.2578 L530.603,846.2578" fill="#FFF3E0" style="stroke:#F5A623;stroke-width:0.5;" /><path d="M530.603,846.2578 C530.603,856.2578 548.603,856.2578 548.603,856.2578 C548.603,856.2578 566.603,856.2578 566.603,846.2578" fill="none" style="stroke:#F5A623;stroke-width:0.5;" /></g><g class="interactive-node participant participant-head" data-entity-uid="part5" data-qualified-name="Queue" id="part5-head" data-node-id="part5"><path d="M586.8171,94.625 L663.696,94.625 C668.696,94.625 668.696,107.1914 668.696,107.1914 C668.696,107.1914 668.696,119.7578 663.696,119.7578 L586.8171,119.7578 C581.8171,119.7578 581.8171,107.1914 581.8171,107.1914 C581.8171,107.1914 581.8171,94.625 586.8171,94.625" fill="#F3E5F5" style="stroke:#7E57C2;stroke-width:0.5;" /><path d="M663.696,94.625 C658.696,94.625 658.696,107.1914 658.696,107.1914 C658.696,119.7578 663.696,119.7578 663.696,119.7578" fill="none" style="stroke:#7E57C2;stroke-width:0.5;" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="66.8789" x="586.8171" y="111.6919">Job Queue</text></g><g class="participant participant-tail" data-entity-uid="part5" data-qualified-name="Queue" id="part5-tail"><path d="M586.8171,821.125 L663.696,821.125 C668.696,821.125 668.696,833.6914 668.696,833.6914 C668.696,833.6914 668.696,846.2578 663.696,846.2578 L586.8171,846.2578 C581.8171,846.2578 581.8171,833.6914 581.8171,833.6914 C581.8171,833.6914 581.8171,821.125 586.8171,821.125" fill="#F3E5F5" style="stroke:#7E57C2;stroke-width:0.5;" /><path d="M663.696,821.125 C658.696,821.125 658.696,833.6914 658.696,833.6914 C658.696,846.2578 663.696,846.2578 663.696,846.2578" fill="none" style="stroke:#7E57C2;stroke-width:0.5;" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="66.8789" x="586.8171" y="838.1919">Job Queue</text></g><g class="interactive-node participant participant-head" data-entity-uid="part6" data-qualified-name="Worker" id="part6-head" data-node-id="part6"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="92.5142" x="720.8252" y="89.625" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="78.5142" x="727.8252" y="108.6919">Worker Pool</text></g><g class="participant participant-tail" data-entity-uid="part6" data-qualified-name="Worker" id="part6-tail"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="92.5142" x="720.8252" y="821.125" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="78.5142" x="727.8252" y="840.1919">Worker Pool</text></g><g class="interactive-node participant participant-head" data-entity-uid="part7" data-qualified-name="Model" id="part7-head" data-node-id="part7"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="73.8838" x="891.6726" y="89.625" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="59.8838" x="898.6726" y="108.6919">Vertex AI</text></g><g class="participant participant-tail" data-entity-uid="part7" data-qualified-name="Model" id="part7-tail"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="73.8838" x="891.6726" y="821.125" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="59.8838" x="898.6726" y="840.1919">Vertex AI</text></g><g class="interactive-node participant participant-head" data-entity-uid="part8" data-qualified-name="DB" id="part8-head" data-node-id="part8"><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="66.9932" x="975.5564" y="116.6919">Cloud SQL</text><path d="M994.053,68.625 C994.053,58.625 1012.053,58.625 1012.053,58.625 C1012.053,58.625 1030.053,58.625 1030.053,68.625 L1030.053,94.625 C1030.053,104.625 1012.053,104.625 1012.053,104.625 C1012.053,104.625 994.053,104.625 994.053,94.625 L994.053,68.625" fill="#FFF3E0" style="stroke:#F5A623;stroke-width:0.5;" /><path d="M994.053,68.625 C994.053,78.625 1012.053,78.625 1012.053,78.625 C1012.053,78.625 1030.053,78.625 1030.053,68.625" fill="none" style="stroke:#F5A623;stroke-width:0.5;" /></g><g class="participant participant-tail" data-entity-uid="part8" data-qualified-name="DB" id="part8-tail"><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="66.9932" x="975.5564" y="833.1919">Cloud SQL</text><path d="M994.053,846.2578 C994.053,836.2578 1012.053,836.2578 1012.053,836.2578 C1012.053,836.2578 1030.053,836.2578 1030.053,846.2578 L1030.053,872.2578 C1030.053,882.2578 1012.053,882.2578 1012.053,882.2578 C1012.053,882.2578 994.053,882.2578 994.053,872.2578 L994.053,846.2578" fill="#FFF3E0" style="stroke:#F5A623;stroke-width:0.5;" /><path d="M994.053,846.2578 C994.053,856.2578 1012.053,856.2578 1012.053,856.2578 C1012.053,856.2578 1030.053,856.2578 1030.053,846.2578" fill="none" style="stroke:#F5A623;stroke-width:0.5;" /></g><g class="interactive-node participant participant-head" data-entity-uid="part9" data-qualified-name="Alert" id="part9-head" data-node-id="part9"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="71.0464" x="1058.5496" y="89.625" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="57.0464" x="1065.5496" y="108.6919">Alert Bot</text></g><g class="participant participant-tail" data-entity-uid="part9" data-qualified-name="Alert" id="part9-tail"><rect fill="#EEF4FB" height="29.1328" rx="2.5" ry="2.5" style="stroke:#4A90D9;stroke-width:0.5;" width="71.0464" x="1058.5496" y="821.125" /><text fill="#1A1A2E" font-family="Arial" font-size="13" lengthAdjust="spacing" textLength="57.0464" x="1065.5496" y="840.1919">Alert Bot</text></g><g class="interactive-edge message" data-entity-1="part1" data-entity-2="part2" id="msg1" data-edge-source="part1" data-edge-target="part2" data-edge-kind="directed"><polygon fill="#4A90D9" points="207.1738,144.5625,217.1738,148.5625,207.1738,152.5625,211.1738,148.5625" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="44.4233" x2="213.1738" y1="148.5625" y2="148.5625" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="150.7505" x="51.4233" y="143.9683">Submit scenario + symbols</text></g><g class="interactive-edge message" data-entity-1="part2" data-entity-2="part3" id="msg2" data-edge-source="part2" data-edge-target="part3" data-edge-kind="directed"><polygon fill="#4A90D9" points="356.5244,171.3672,366.5244,175.3672,356.5244,179.3672,360.5244,175.3672" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="219.1738" x2="362.5244" y1="175.3672" y2="175.3672" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="114.6997" x="226.1738" y="170.7729">POST /v1/ai/requests</text></g><g class="interactive-edge message" data-entity-1="part3" data-entity-2="part4" id="msg3" data-edge-source="part3" data-edge-target="part4" data-edge-kind="directed"><polygon fill="#4A90D9" points="536.603,198.1719,546.603,202.1719,536.603,206.1719,540.603,202.1719" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="368.5244" x2="542.603" y1="202.1719" y2="202.1719" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="122.0259" x="375.5244" y="197.5776">Lookup recent answer</text></g><path d="M10,217.1719 L74.4429,217.1719 L74.4429,224.3047 L64.4429,234.3047 L10,234.3047 L10,217.1719" fill="#FAFAFA" style="stroke:#555555;stroke-width:1.5;" /><rect fill="none" height="587.9531" style="stroke:#A0AEC0;stroke-width:1.5;" width="1129.5959" x="10" y="217.1719" /><text fill="#000000" font-family="Arial" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19.4429" x="25" y="230.2388">alt</text><text fill="#1A1A2E" font-family="Arial" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="239.8081" x="89.4429" y="231.2388">[cached recommendation exists]</text><g class="interactive-edge message" data-entity-1="part4" data-entity-2="part3" id="msg4" data-edge-source="part4" data-edge-target="part3" data-edge-kind="directed"><polygon fill="#4A90D9" points="379.5244,249.2422,369.5244,253.2422,379.5244,257.2422,375.5244,253.2422" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="373.5244" x2="547.603" y1="253.2422" y2="253.2422" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="156.0786" x="385.5244" y="248.6479">Warm response + metadata</text></g><g class="interactive-edge message" data-entity-1="part3" data-entity-2="part2" id="msg5" data-edge-source="part3" data-edge-target="part2" data-edge-kind="directed"><polygon fill="#4A90D9" points="230.1738,276.0469,220.1738,280.0469,230.1738,284.0469,226.1738,280.0469" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="224.1738" x2="367.5244" y1="280.0469" y2="280.0469" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="123.2075" x="236.1738" y="275.4526">Return result instantly</text></g><g class="interactive-edge message" data-entity-1="part2" data-entity-2="part1" id="msg6" data-edge-source="part2" data-edge-target="part1" data-edge-kind="directed"><polygon fill="#4A90D9" points="55.4233,302.8516,45.4233,306.8516,55.4233,310.8516,51.4233,306.8516" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="49.4233" x2="218.1738" y1="306.8516" y2="306.8516" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="137.1831" x="61.4233" y="302.2573">Render recommendation</text></g><line style="stroke:#A0AEC0;stroke-width:1;stroke-dasharray:2,2;" x1="10" x2="1139.5959" y1="315.8516" y2="315.8516" /><text fill="#1A1A2E" font-family="Arial" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="139.3438" x="15" y="327.9185">[needs recompute]</text><g class="interactive-edge message" data-entity-1="part4" data-entity-2="part3" id="msg7" data-edge-source="part4" data-edge-target="part3" data-edge-kind="directed"><polygon fill="#4A90D9" points="379.5244,346.7891,369.5244,350.7891,379.5244,354.7891,375.5244,350.7891" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="373.5244" x2="547.603" y1="350.7891" y2="350.7891" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="62.9385" x="385.5244" y="346.1948">Cache miss</text></g><g class="interactive-edge message" data-entity-1="part3" data-entity-2="part8" id="msg8" data-edge-source="part3" data-edge-target="part8" data-edge-kind="directed"><polygon fill="#4A90D9" points="1000.053,373.5938,1010.053,377.5938,1000.053,381.5938,1004.053,377.5938" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="368.5244" x2="1006.053" y1="377.5938" y2="377.5938" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="126.6021" x="375.5244" y="372.9995">Save request envelope</text></g><g class="interactive-edge message" data-entity-1="part3" data-entity-2="part5" id="msg9" data-edge-source="part3" data-edge-target="part5" data-edge-kind="directed"><polygon fill="#4A90D9" points="613.2566,400.3984,623.2566,404.3984,613.2566,408.3984,617.2566,404.3984" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="368.5244" x2="619.2566" y1="404.3984" y2="404.3984" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="145.562" x="375.5244" y="399.8042">Enqueue orchestration job</text></g><g class="interactive-edge message" data-entity-1="part5" data-entity-2="part6" id="msg10" data-edge-source="part5" data-edge-target="part6" data-edge-kind="directed"><polygon fill="#4A90D9" points="755.0823,427.2031,765.0823,431.2031,755.0823,435.2031,759.0823,431.2031" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="625.2566" x2="761.0823" y1="431.2031" y2="431.2031" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="117.8257" x="632.2566" y="426.6089">Deliver compute task</text></g><path d="M710.8252,446.2031 L787.4492,446.2031 L787.4492,453.3359 L777.4492,463.3359 L710.8252,463.3359 L710.8252,446.2031" fill="#FAFAFA" style="stroke:#555555;stroke-width:1.5;" /><rect fill="none" height="83.875" style="stroke:#A0AEC0;stroke-width:1.5;" width="347.7244" x="710.8252" y="446.2031" /><text fill="#000000" font-family="Arial" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="31.624" x="725.8252" y="459.27">loop</text><text fill="#1A1A2E" font-family="Arial" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="241.2744" x="802.4492" y="460.27">[until all data sources are ready]</text><g class="interactive-edge message" data-entity-1="part6" data-entity-2="part8" id="msg11" data-edge-source="part6" data-edge-target="part8" data-edge-kind="directed"><polygon fill="#4A90D9" points="1000.053,478.2734,1010.053,482.2734,1000.053,486.2734,1004.053,482.2734" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="767.0823" x2="1006.053" y1="482.2734" y2="482.2734" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="117.6431" x="774.0823" y="477.6792">Fetch latest positions</text></g><g class="interactive-edge message" data-entity-1="part6" data-entity-2="part6" id="msg12" data-edge-source="part6" data-edge-target="part6" data-edge-kind="undirected"><line style="stroke:#4A90D9;stroke-width:1;" x1="767.0823" x2="809.0823" y1="509.0781" y2="509.0781" /><line style="stroke:#4A90D9;stroke-width:1;" x1="809.0823" x2="809.0823" y1="509.0781" y2="522.0781" /><line style="stroke:#4A90D9;stroke-width:1;" x1="768.0823" x2="809.0823" y1="522.0781" y2="522.0781" /><polygon fill="#4A90D9" points="778.0823,518.0781,768.0823,522.0781,778.0823,526.0781,774.0823,522.0781" style="stroke:#4A90D9;stroke-width:1;" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="144.4824" x="774.0823" y="504.4839">Normalize prompt context</text></g><g class="interactive-edge message" data-entity-1="part6" data-entity-2="part7" id="msg13" data-edge-source="part6" data-edge-target="part7" data-edge-kind="directed"><polygon fill="#4A90D9" points="916.6145,551.8828,926.6145,555.8828,916.6145,559.8828,920.6145,555.8828" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="767.0823" x2="922.6145" y1="555.8828" y2="555.8828" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="137.5322" x="774.0823" y="551.2886">Request plan + rationale</text></g><g class="interactive-edge message" data-entity-1="part7" data-entity-2="part6" id="msg14" data-edge-source="part7" data-edge-target="part6" data-edge-kind="directed"><polygon fill="#4A90D9" points="778.0823,578.6875,768.0823,582.6875,778.0823,586.6875,774.0823,582.6875" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="772.0823" x2="927.6145" y1="582.6875" y2="582.6875" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="112.0947" x="784.0823" y="578.0933">Structured response</text></g><g class="interactive-edge message" data-entity-1="part6" data-entity-2="part8" id="msg15" data-edge-source="part6" data-edge-target="part8" data-edge-kind="directed"><polygon fill="#4A90D9" points="1000.053,605.4922,1010.053,609.4922,1000.053,613.4922,1004.053,609.4922" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="767.0823" x2="1006.053" y1="609.4922" y2="609.4922" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="170.0112" x="774.0823" y="604.8979">Persist answer and diagnostics</text></g><g class="interactive-edge message" data-entity-1="part6" data-entity-2="part9" id="msg16" data-edge-source="part6" data-edge-target="part9" data-edge-kind="directed"><polygon fill="#4A90D9" points="1082.0728,632.2969,1092.0728,636.2969,1082.0728,640.2969,1086.0728,636.2969" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="767.0823" x2="1088.0728" y1="636.2969" y2="636.2969" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="142.9463" x="774.0823" y="631.7026">Emit completion webhook</text></g><g class="interactive-edge message" data-entity-1="part9" data-entity-2="part2" id="msg17" data-edge-source="part9" data-edge-target="part2" data-edge-kind="directed"><polygon fill="#4A90D9" points="230.1738,659.1016,220.1738,663.1016,230.1738,667.1016,226.1738,663.1016" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="224.1738" x2="1093.0728" y1="663.1016" y2="663.1016" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="134.3149" x="236.1738" y="658.5073">Push refresh notification</text></g><g class="interactive-edge message" data-entity-1="part2" data-entity-2="part3" id="msg18" data-edge-source="part2" data-edge-target="part3" data-edge-kind="directed"><polygon fill="#4A90D9" points="356.5244,685.9063,366.5244,689.9063,356.5244,693.9063,360.5244,689.9063" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="219.1738" x2="362.5244" y1="689.9063" y2="689.9063" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="125.3506" x="226.1738" y="685.312">GET /v1/ai/requests/:id</text></g><g class="interactive-edge message" data-entity-1="part3" data-entity-2="part8" id="msg19" data-edge-source="part3" data-edge-target="part8" data-edge-kind="directed"><polygon fill="#4A90D9" points="1000.053,712.7109,1010.053,716.7109,1000.053,720.7109,1004.053,716.7109" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;" x1="368.5244" x2="1006.053" y1="716.7109" y2="716.7109" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="121.1343" x="375.5244" y="712.1167">Read finalized answer</text></g><g class="interactive-edge message" data-entity-1="part8" data-entity-2="part3" id="msg20" data-edge-source="part8" data-edge-target="part3" data-edge-kind="directed"><polygon fill="#4A90D9" points="379.5244,739.5156,369.5244,743.5156,379.5244,747.5156,375.5244,743.5156" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="373.5244" x2="1011.053" y1="743.5156" y2="743.5156" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="85.1157" x="385.5244" y="738.9214">Answer + trace</text></g><g class="interactive-edge message" data-entity-1="part3" data-entity-2="part2" id="msg21" data-edge-source="part3" data-edge-target="part2" data-edge-kind="directed"><polygon fill="#4A90D9" points="230.1738,766.3203,220.1738,770.3203,230.1738,774.3203,226.1738,770.3203" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="224.1738" x2="367.5244" y1="770.3203" y2="770.3203" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="123.6318" x="236.1738" y="765.7261">Return enriched result</text></g><g class="interactive-edge message" data-entity-1="part2" data-entity-2="part1" id="msg22" data-edge-source="part2" data-edge-target="part1" data-edge-kind="directed"><polygon fill="#4A90D9" points="55.4233,793.125,45.4233,797.125,55.4233,801.125,51.4233,797.125" style="stroke:#4A90D9;stroke-width:1;" /><line style="stroke:#4A90D9;stroke-width:1;stroke-dasharray:2,2;" x1="49.4233" x2="218.1738" y1="797.125" y2="797.125" /><text fill="#333333" font-family="Arial" font-size="11" lengthAdjust="spacing" textLength="135.0132" x="61.4233" y="792.5308">Reveal recommendation</text></g></g></svg>
+        </div>
+      </div>
+      <div class="canvas-status" id="diagram-status">Fit 100%</div>
+    </section>
+  </main>
+  <script>
+    const stage = document.getElementById("diagram-stage");
+    const viewport = document.getElementById("diagram-viewport");
+    const content = document.getElementById("diagram-content");
+    const status = document.getElementById("diagram-status");
+    const zoomInButton = document.getElementById("zoom-in");
+    const zoomOutButton = document.getElementById("zoom-out");
+    const fitButton = document.getElementById("fit-view");
+    const actualSizeButton = document.getElementById("actual-size");
+    const svg = content.querySelector("svg");
+
+    if (svg) {
+      const nodes = Array.from(svg.querySelectorAll("[data-node-id]"));
+      const edges = Array.from(svg.querySelectorAll("[data-edge-source][data-edge-target]"));
+      const PADDING = 28;
+      const PAN_STEP = 60;
+      const SCALE_STEP = 1.16;
+      const MIN_SCALE = 0.08;
+      const MAX_SCALE = 3.5;
+      const rawBounds = svg.getBBox();
+      const normalizedBounds = (Number.isFinite(rawBounds.width) && rawBounds.width > 0 && Number.isFinite(rawBounds.height) && rawBounds.height > 0)
+        ? rawBounds
+        : null;
+
+      let scale = 1;
+      let translateX = 0;
+      let translateY = 0;
+      let fitScale = 1;
+      let isSpacePressed = false;
+      let isDragging = false;
+      let activePointerId = null;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let dragOriginX = 0;
+      let dragOriginY = 0;
+      let shouldAutoFitOnResize = true;
+      let selectedNodeId = null;
+
+      if (normalizedBounds) {
+        svg.style.transform = `translate(${-normalizedBounds.x}px, ${-normalizedBounds.y}px)`;
+        svg.style.transformOrigin = "top left";
+        content.style.width = `${normalizedBounds.width}px`;
+        content.style.height = `${normalizedBounds.height}px`;
+      }
+
+      const getCanvasSize = () => {
+        if (normalizedBounds) {
+          return { width: normalizedBounds.width, height: normalizedBounds.height };
+        }
+
+        const viewBox = svg.viewBox && svg.viewBox.baseVal;
+        if (viewBox && viewBox.width && viewBox.height) {
+          return { width: viewBox.width, height: viewBox.height };
+        }
+
+        const box = svg.getBBox();
+        return { width: box.width || 1, height: box.height || 1 };
+      };
+
+      const clampScale = (nextScale) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale));
+
+      const applyTransform = () => {
+        content.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        const zoomPercent = Math.round(scale * 100);
+        status.textContent = `Zoom ${zoomPercent}%`;
+      };
+
+      const centerForScale = (nextScale) => {
+        const canvas = getCanvasSize();
+        const viewportRect = viewport.getBoundingClientRect();
+        return {
+          x: (viewportRect.width - canvas.width * nextScale) / 2,
+          y: (viewportRect.height - canvas.height * nextScale) / 2,
+        };
+      };
+
+      const fitToViewport = () => {
+        const canvas = getCanvasSize();
+        const viewportRect = viewport.getBoundingClientRect();
+        const usableWidth = Math.max(120, viewportRect.width - PADDING * 2);
+        const usableHeight = Math.max(120, viewportRect.height - PADDING * 2);
+        fitScale = clampScale(Math.min(usableWidth / canvas.width, usableHeight / canvas.height));
+        scale = fitScale;
+        const centered = centerForScale(scale);
+        translateX = centered.x;
+        translateY = centered.y;
+        shouldAutoFitOnResize = true;
+        applyTransform();
+        status.textContent = `Fit ${Math.round(scale * 100)}%`;
+      };
+
+      const resetToActualSize = () => {
+        scale = 1;
+        const centered = centerForScale(scale);
+        translateX = centered.x;
+        translateY = centered.y;
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      };
+
+      const zoomAtPoint = (factor, clientX, clientY) => {
+        const viewportRect = viewport.getBoundingClientRect();
+        const pointerX = clientX - viewportRect.left;
+        const pointerY = clientY - viewportRect.top;
+        const nextScale = clampScale(scale * factor);
+        const scaleRatio = nextScale / scale;
+
+        translateX = pointerX - (pointerX - translateX) * scaleRatio;
+        translateY = pointerY - (pointerY - translateY) * scaleRatio;
+        scale = nextScale;
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      };
+
+      const panBy = (dx, dy) => {
+        translateX += dx;
+        translateY += dy;
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      };
+
+      fitToViewport();
+
+      const nodeMap = new Map();
+      const nodeCenterCache = new Map();
+      for (const node of nodes) {
+        const nodeId = node.dataset.nodeId;
+        if (!nodeMap.has(nodeId)) nodeMap.set(nodeId, []);
+        nodeMap.get(nodeId).push(node);
+      }
+
+      const getNodeCenter = (nodeId) => {
+        if (nodeCenterCache.has(nodeId)) return nodeCenterCache.get(nodeId);
+
+        const relatedNodes = nodeMap.get(nodeId) || [];
+        if (!relatedNodes.length) return null;
+
+        let totalX = 0;
+        let totalY = 0;
+        let count = 0;
+
+        for (const related of relatedNodes) {
+          const box = related.getBBox();
+          if (!Number.isFinite(box.x) || !Number.isFinite(box.y)) continue;
+          totalX += box.x + box.width / 2;
+          totalY += box.y + box.height / 2;
+          count += 1;
+        }
+
+        const center = count ? { x: totalX / count, y: totalY / count } : null;
+        nodeCenterCache.set(nodeId, center);
+        return center;
+      };
+
+      const getFlowDirectionClass = (sourceId, targetId) => {
+        const sourceCenter = getNodeCenter(sourceId);
+        const targetCenter = getNodeCenter(targetId);
+        if (!sourceCenter || !targetCenter) return "edge-flow-forward";
+
+        const dx = targetCenter.x - sourceCenter.x;
+        const dy = targetCenter.y - sourceCenter.y;
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          return dx >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
+        }
+
+        return dy >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
+      };
+
+      const resetState = () => {
+        selectedNodeId = null;
+        for (const node of nodes) {
+          node.classList.remove("is-dimmed", "is-active", "is-connected");
+        }
+        for (const edge of edges) {
+          edge.classList.remove(
+            "is-dimmed",
+            "is-connected",
+            "edge-incoming",
+            "edge-outgoing",
+            "edge-neutral",
+            "edge-flow-forward",
+            "edge-flow-reverse"
+          );
+        }
+      };
+
+      const focusNode = (nodeId) => {
+        selectedNodeId = nodeId;
+        resetState();
+        selectedNodeId = nodeId;
+
+        for (const node of nodes) {
+          node.classList.add("is-dimmed");
+        }
+        for (const edge of edges) {
+          edge.classList.add("is-dimmed");
+        }
+
+        for (const active of nodeMap.get(nodeId) || []) {
+          active.classList.remove("is-dimmed");
+          active.classList.add("is-active");
+        }
+
+        for (const edge of edges) {
+          const source = edge.dataset.edgeSource;
+          const target = edge.dataset.edgeTarget;
+          if (source !== nodeId && target !== nodeId) continue;
+
+          edge.classList.remove("is-dimmed");
+          edge.classList.add("is-connected");
+
+          const directed = edge.dataset.edgeKind === "directed";
+          if (!directed || source === target) {
+            edge.classList.add("edge-neutral");
+          } else if (source === nodeId) {
+            edge.classList.add("edge-outgoing");
+            edge.classList.add(getFlowDirectionClass(source, target));
+          } else {
+            edge.classList.add("edge-incoming");
+            edge.classList.add(getFlowDirectionClass(source, target));
+          }
+
+          for (const relatedId of [source, target]) {
+            for (const related of nodeMap.get(relatedId) || []) {
+              related.classList.remove("is-dimmed");
+              related.classList.add(relatedId === nodeId ? "is-active" : "is-connected");
+            }
+          }
+        }
+      };
+
+      for (const node of nodes) {
+        node.addEventListener("click", (event) => {
+          event.stopPropagation();
+          focusNode(node.dataset.nodeId);
+        });
+      }
+
+      svg.addEventListener("click", (event) => {
+        const clickedNode = event.target.closest("[data-node-id]");
+        if (clickedNode) return;
+        resetState();
+      });
+
+      viewport.addEventListener("click", (event) => {
+        if (!event.target.closest("[data-node-id]")) {
+          resetState();
+        }
+      });
+
+      zoomInButton.addEventListener("click", () => {
+        const rect = viewport.getBoundingClientRect();
+        zoomAtPoint(SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      });
+
+      zoomOutButton.addEventListener("click", () => {
+        const rect = viewport.getBoundingClientRect();
+        zoomAtPoint(1 / SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      });
+
+      fitButton.addEventListener("click", fitToViewport);
+      actualSizeButton.addEventListener("click", resetToActualSize);
+
+      viewport.addEventListener("wheel", (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+          event.preventDefault();
+          const factor = Math.exp(-event.deltaY * 0.0015);
+          zoomAtPoint(factor, event.clientX, event.clientY);
+          return;
+        }
+
+        event.preventDefault();
+        const panX = event.shiftKey ? -event.deltaY : -event.deltaX;
+        const panY = event.shiftKey ? 0 : -event.deltaY;
+        panBy(panX, panY);
+      }, { passive: false });
+
+      viewport.addEventListener("pointerdown", (event) => {
+        const wantsPan = event.button === 1 || (event.button === 0 && isSpacePressed);
+        if (!wantsPan) return;
+
+        event.preventDefault();
+        isDragging = true;
+        activePointerId = event.pointerId;
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        dragOriginX = translateX;
+        dragOriginY = translateY;
+        viewport.classList.add("is-dragging");
+        viewport.setPointerCapture(event.pointerId);
+      });
+
+      viewport.addEventListener("pointermove", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+        translateX = dragOriginX + (event.clientX - dragStartX);
+        translateY = dragOriginY + (event.clientY - dragStartY);
+        shouldAutoFitOnResize = false;
+        applyTransform();
+      });
+
+      const endDrag = (event) => {
+        if (!isDragging) return;
+        if (event && activePointerId !== null && event.pointerId !== activePointerId) return;
+        isDragging = false;
+        activePointerId = null;
+        viewport.classList.remove("is-dragging");
+      };
+
+      viewport.addEventListener("pointerup", endDrag);
+      viewport.addEventListener("pointercancel", endDrag);
+      viewport.addEventListener("pointerleave", endDrag);
+
+      const updatePanModeClass = () => {
+        viewport.classList.toggle("is-pan-mode", isSpacePressed && !isDragging);
+      };
+
+      window.addEventListener("keydown", (event) => {
+        if (event.target && /input|textarea|select/i.test(event.target.tagName)) return;
+
+        if (event.code === "Space") {
+          event.preventDefault();
+        }
+
+        if (event.code === "Space" && !event.repeat) {
+          isSpacePressed = true;
+          updatePanModeClass();
+        }
+
+        if (event.key === "+" || event.key === "=") {
+          event.preventDefault();
+          const rect = viewport.getBoundingClientRect();
+          zoomAtPoint(SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        } else if (event.key === "-" || event.key === "_") {
+          event.preventDefault();
+          const rect = viewport.getBoundingClientRect();
+          zoomAtPoint(1 / SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        } else if (event.key === "0") {
+          event.preventDefault();
+          fitToViewport();
+        } else if (event.key === "1") {
+          event.preventDefault();
+          resetToActualSize();
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          panBy(PAN_STEP, 0);
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          panBy(-PAN_STEP, 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          panBy(0, PAN_STEP);
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          panBy(0, -PAN_STEP);
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        if (event.code === "Space") {
+          event.preventDefault();
+          isSpacePressed = false;
+          updatePanModeClass();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (shouldAutoFitOnResize) fitToViewport();
+      });
+    }
+  </script>
+</body>
+</html>

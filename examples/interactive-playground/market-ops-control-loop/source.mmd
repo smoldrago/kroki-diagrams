@@ -1,0 +1,63 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#FAFAFA',
+    'primaryColor': '#EEF4FB',
+    'primaryTextColor': '#1A1A2E',
+    'primaryBorderColor': '#4A90D9',
+    'secondaryColor': '#FFF3E0',
+    'secondaryTextColor': '#1A1A2E',
+    'secondaryBorderColor': '#F5A623',
+    'tertiaryColor': '#F3E5F5',
+    'tertiaryTextColor': '#1A1A2E',
+    'tertiaryBorderColor': '#7E57C2',
+    'lineColor': '#555555',
+    'fontFamily': 'Arial, sans-serif',
+    'fontSize': '14px'
+  }
+}}%%
+flowchart LR
+  subgraph Intake["Intake and Context"]
+    direction LR
+    trader([Trader Trigger]):::person --> intake[Capture request context]:::service
+    intake --> classify{Urgent or routine?}:::control
+    classify -->|Routine| warm[Check warm cache]:::datastore
+    classify -->|Urgent| freeze[Freeze current risk snapshot]:::control
+    warm --> cacheHit{Fresh answer available?}:::control
+  end
+
+  subgraph Planning["Planning and Validation"]
+    direction LR
+    prep[Assemble retrieval context]:::service --> plan[Generate trade plan]:::service
+    plan --> sanity{Passes sanity checks?}:::control
+    analyst[Escalate to analyst]:::person --> revise[Adjust prompt or policy]:::control
+  end
+
+  subgraph Execution["Execution and Monitoring"]
+    direction LR
+    execute[Dispatch staged order]:::service --> monitor[Monitor fill and drift]:::service
+    monitor --> drift{Drift above threshold?}:::control
+    incident[Open incident thread]:::control --> rollback[Rollback outstanding intent]:::control
+  end
+
+  subgraph Delivery["Delivery and Trace"]
+    direction LR
+    publish[Publish recommendation]:::service --> notify[Notify trader and update UI]:::service
+    notify --> archive[Archive trace bundle]:::service
+    archive --> audit[(Replay log)]:::datastore
+  end
+
+  cacheHit -->|Yes| publish
+  cacheHit -->|No| prep
+  freeze --> prep
+  sanity -->|No| analyst
+  revise --> prep
+  sanity -->|Yes| execute
+  drift -->|No| publish
+  drift -->|Yes| incident
+  rollback --> analyst
+
+  classDef person fill:#08427B,color:#FFFFFF,stroke:#073B6F,stroke-width:1.5px
+  classDef service fill:#1168BD,color:#FFFFFF,stroke:#3C7FC0,stroke-width:1.5px
+  classDef datastore fill:#FFF3E0,color:#1A1A2E,stroke:#F5A623,stroke-width:1.5px
+  classDef control fill:#F3E5F5,color:#1A1A2E,stroke:#7E57C2,stroke-width:1.5px

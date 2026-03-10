@@ -25,8 +25,6 @@ This skill packages that workflow for coding agents so they do not just dump raw
 
 https://github.com/user-attachments/assets/e22072b9-ae73-4405-b6ad-659f2cefc868
 
-If GitHub does not render the repo-local video inline on your browser, it will still open or download the file directly.
-
 ## What This Skill Actually Does
 
 From start to finish, the skill:
@@ -256,11 +254,6 @@ install-pi.sh
 - Interactivity depends on inline SVG output and engine-emitted metadata
 - Not every Kroki engine is supported equally
 - Some diagram problems are better split into multiple diagrams instead of one giant graph
-
-## Notes
-
-- This repo does not add slash commands yet
-- The plugin wrapper is intentionally minimal and focused on distributing the skill itself
 
 ## Credits
 

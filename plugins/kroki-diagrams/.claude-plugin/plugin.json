@@ -1,0 +1,11 @@
+{
+  "name": "kroki-diagrams",
+  "description": "Create clean, readable diagrams with Kroki, interactive HTML wrappers, and generated diagram indexes",
+  "version": "1.0.0",
+  "author": {
+    "name": "smoldrago"
+  },
+  "repository": "https://github.com/smoldrago/kroki-diagrams",
+  "license": "MIT"
+}
+

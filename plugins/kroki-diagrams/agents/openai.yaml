@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kroki Diagrams"
+  short_description: "Generate clean Kroki diagrams with the right engine for the job."
+  default_prompt: "Use $kroki-diagrams to choose the right Kroki engine, create a clean diagram, and return the rendered output plus the source code."

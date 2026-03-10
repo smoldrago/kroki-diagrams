@@ -1,0 +1,28 @@
+{
+  "name": "kroki-diagrams-marketplace",
+  "owner": {
+    "name": "smoldrago"
+  },
+  "metadata": {
+    "description": "Plugin distribution for kroki-diagrams",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "kroki-diagrams",
+      "source": "./plugins/kroki-diagrams",
+      "description": "Create clean, readable diagrams with Kroki, interactive HTML wrappers, and generated diagram indexes",
+      "version": "1.0.0",
+      "author": {
+        "name": "smoldrago"
+      },
+      "repository": "https://github.com/smoldrago/kroki-diagrams",
+      "license": "MIT",
+      "keywords": ["diagrams", "kroki", "plantuml", "graphviz", "mermaid"],
+      "category": "visualization",
+      "tags": ["diagrams", "kroki", "architecture", "svg", "interactive"]
+    }
+  ]
+}
+

@@ -1,6 +1,6 @@
 {
   "name": "kroki-diagrams",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Agent skill distribution for Kroki Diagrams across Claude Code, Codex, and Pi",
   "keywords": [
     "claude-code-plugin",
@@ -10,4 +10,3 @@
   ],
   "license": "MIT"
 }
-

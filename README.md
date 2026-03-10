@@ -260,6 +260,15 @@ install-pi.sh
 - [Kroki](https://kroki.io/) for the rendering service that turns text-based diagram source into generated outputs across multiple diagram engines
 - The PlantUML, C4-PlantUML, Graphviz, Mermaid, and ERD ecosystems that make the underlying diagram formats possible
 
+## Roadmap
+
+- UI refinement and general "desloppification" of the interactive viewer
+- Dark mode support
+- Better edge-case handling for large diagrams and inconsistent SVG structures
+- UI polishing across the viewer and generated index pages
+- Product presets for common use cases like architecture, sequence, schema, and planning
+- Theme packs for different visual directions and documentation contexts
+
 ## License
 
 MIT

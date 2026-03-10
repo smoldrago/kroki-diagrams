@@ -23,7 +23,7 @@ This skill packages that workflow for coding agents so they do not just dump raw
 
 ## Quick Demo
 
-<video src="showcase.mp4" controls width="1200"></video>
+https://github.com/user-attachments/assets/e22072b9-ae73-4405-b6ad-659f2cefc868
 
 If GitHub does not render the repo-local video inline on your browser, it will still open or download the file directly.
 

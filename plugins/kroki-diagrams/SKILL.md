@@ -1,6 +1,6 @@
 ---
 name: kroki-diagrams
-description: Create clean, readable diagrams using Kroki with a use-case-first selector. Use when Codex needs to visualize architecture, runtime topology, request flows, dependency graphs, schemas, planning structures, or tree-like repository layouts from code, docs, or natural-language descriptions. Prefer this skill when the user wants free, versionable, repository-local diagrams and wants the right diagram type, engine, or text-tree format chosen for the job.
+description: Create clean, readable diagrams using Kroki with a use-case-first selector. Use when the user wants repository-local diagrams for architecture, runtime topology, request flows, dependency graphs, schemas, planning structures, or tree-like repository layouts from code, docs, or natural-language descriptions. Prefer this skill when the user wants versionable diagram source and the right engine chosen for the job. Do not use it for generic UI mockups, freeform graphic design, image editing, screenshots, slide design, or non-diagram data visualization.
 ---
 
 # Kroki Diagrams

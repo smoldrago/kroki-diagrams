@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 
+.aidesigner/
+!.aidesigner/.gitkeep
+
+.agents/
+.claude/
+.mcp.json

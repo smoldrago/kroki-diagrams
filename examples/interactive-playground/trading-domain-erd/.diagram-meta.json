@@ -3,5 +3,6 @@
   "engine": "erd",
   "format": "svg",
   "summary": "Rendered with erd.",
+  "kroki_url": "https://kroki.io/erd/svg/pVPBToQwEL33K8geN9mDV2-omHBAN7uQmBBDCsxqY2lxOmwkxn8XqRswO-Gwntq-18x78zrNMwfonkUQrFUdfGpZgr4OVlkW362-BhQaqfSEp9FTOuKkAM9gkW8t0sFqZRdKdoNiwTKNNLUkYORK6aCoqp6RvEH7BhhWle0MLci2J2u89hFMxylLX7hAODDie8LB8Eu_68zl0i3apiWecySpc4yvgUCCupA0I-Mk2qdhsh29PWK9-LTu13uBneHFyzHa4hQBX6VvSstNiFM18L65hkR-r7RecGt_uuEtvNNsLh6yJNrFtz7YDw4XeagB6V_JODgCKuqZBqtXaQycJyLGnxZcbTbrYPomYtp66u84n9HzgRPzg6f9mwu_eGjMlbnqQxDf",
   "interactive_tier": "best-effort"
 }

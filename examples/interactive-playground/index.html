@@ -6,411 +6,338 @@
   <title>Kroki Interactive Diagrams</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 
-    :root {
-      --base-950: #04060b;
-      --base-900: #0a0f1e;
-      --base-800: #141c30;
-      --glass-bg: rgba(20, 28, 48, 0.45);
-      --glass-border: rgba(255, 255, 255, 0.06);
-      --text: #e2e8f0;
-      --muted: #94a3b8;
+#app {
+  --bg: #0d0f13; --bg2: #0f1116; --bg3: #0b0d11; --panel: #12141a; --panel2: #161922;
+  --canvas: #08090c; --border: rgba(255,255,255,.08); --border2: rgba(255,255,255,.06);
+  --text: #eceef2; --text2: #a9adb6; --muted: #6b7280; --faint: #565b65;
+  --accent: #8b8ff5; --accent-soft: rgba(139,143,245,.14);
+  --dot: rgba(255,255,255,.05); --input: #0a0b0e;
+  min-height: 100vh; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+#app[data-theme="light"] {
+  --bg: #eceef2; --bg2: #ffffff; --bg3: #f6f7f9; --panel: #ffffff; --panel2: #eef0f4;
+  --canvas: #fafbfc; --border: rgba(15,20,35,.11); --border2: rgba(15,20,35,.07);
+  --text: #161a22; --text2: #454b57; --muted: #727884; --faint: #9aa0ac;
+  --accent: #4f46e5; --accent-soft: rgba(79,70,229,.1);
+  --dot: rgba(15,20,35,.06); --input: #f2f3f6;
+}
+#app[data-theme="dark"] .kc-prev-img { filter: invert(1) hue-rotate(180deg); }
+a { color: inherit; text-decoration: none; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-      --plantuml:   168, 85, 247;
-      --mermaid:    45, 212, 191;
-      --graphviz:   251, 191, 36;
-      --erd:        251, 113, 133;
-      --c4plantuml: 99, 102, 241;
-    }
+/* topbar */
+.kc-top {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px;
+  padding: 0 20px; height: 56px; border-bottom: 1px solid var(--border); background: var(--bg2);
+}
+.kc-logo { display: flex; align-items: center; gap: 9px; }
+.kc-logo-mark {
+  width: 28px; height: 28px; border-radius: 7px; background: var(--panel2);
+  border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+}
+.kc-logo-mark svg { width: 16px; height: 16px; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.kc-logo b { font: 600 14px system-ui; color: var(--text); letter-spacing: -.01em; }
+.kc-logo span { font: 500 14px system-ui; color: var(--muted); }
+.kc-searchbar {
+  flex: 1; display: flex; align-items: center; gap: 9px; max-width: 380px; margin-left: 10px;
+  padding: 0 12px; height: 34px; background: var(--input); border: 1px solid var(--border); border-radius: 9px;
+}
+.kc-searchbar svg { width: 14px; height: 14px; fill: none; stroke: var(--faint); stroke-width: 2; flex: none; }
+.kc-searchbar input { flex: 1; background: transparent; border: 0; outline: 0; color: var(--text); font: 400 12.5px system-ui; }
+.kc-searchbar input::placeholder { color: var(--faint); }
+.kc-top-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.kc-viewtoggle { display: flex; background: var(--input); border: 1px solid var(--border); border-radius: 9px; padding: 3px; }
+.kc-viewtoggle button {
+  width: 30px; height: 26px; border-radius: 6px; background: transparent; border: 0; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .13s, color .13s;
+}
+.kc-viewtoggle button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.kc-viewtoggle button.active { background: var(--panel2); color: var(--text); }
+.kc-icon {
+  width: 34px; height: 32px; border-radius: 9px; background: var(--input); border: 1px solid var(--border);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.kc-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    html { color-scheme: dark; }
+/* layout */
+.kc-shell { display: flex; align-items: flex-start; }
+.kc-rail {
+  width: 212px; flex: none; align-self: stretch; border-right: 1px solid var(--border);
+  padding: 20px 16px; background: var(--bg3); min-height: calc(100vh - 56px); position: sticky; top: 56px;
+}
+.kc-rail-h { font: 600 10px/1 'JetBrains Mono', monospace; letter-spacing: .11em; color: var(--faint); text-transform: uppercase; margin-bottom: 12px; }
+.kc-eng { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background .13s; }
+.kc-eng:hover { background: var(--accent-soft); }
+.kc-eng .sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.kc-eng .lb { font: 500 12.5px system-ui; flex: 1; color: var(--text2); }
+.kc-eng .ct { font: 500 11px/1 'JetBrains Mono', monospace; color: var(--faint); }
+.kc-eng.active { background: var(--panel2); }
+.kc-eng.active .lb { color: var(--text); }
+.kc-content { flex: 1; padding: 26px 28px; min-width: 0; }
+.kc-content-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; gap: 12px; }
+.kc-content-head h1 { font: 700 20px system-ui; color: var(--text); letter-spacing: -.02em; }
+.kc-content-head .sub { font: 400 12.5px system-ui; color: var(--muted); margin-top: 3px; }
+.kc-content-head .sort { font: 500 11px/1 'JetBrains Mono', monospace; color: var(--faint); white-space: nowrap; }
 
-    body {
-      font-family: 'Geist', 'Inter', system-ui, sans-serif;
-      background: var(--base-950);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+/* gallery */
+.kc-gallery.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 15px; }
+.kc-gallery.list { display: flex; flex-direction: column; gap: 9px; }
 
-    a { color: inherit; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+.kc-card {
+  position: relative; background: var(--panel); border: 1px solid var(--border2);
+  border-left: 2px solid var(--accent); border-radius: 12px; overflow: hidden;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.kc-card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -16px rgba(0,0,0,.5); }
+.kc-card-link { position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
+.kc-card > *:not(.kc-card-link) { position: relative; z-index: 1; pointer-events: none; }
+.kc-card a, .kc-card button { pointer-events: auto; }
+.kc-card-prev { height: 140px; background: var(--canvas); overflow: hidden; border-bottom: 1px solid var(--border2); }
+.kc-prev-img { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; padding: 13px; }
+.kc-card-main { padding: 14px 15px; }
+.kc-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.kc-card-top h2 { font: 600 13.5px system-ui; color: var(--text); }
+.kc-card-sum { font: 400 12px/1.5 system-ui; color: var(--muted); }
+.kc-card-foot { display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border2); }
+.kc-card-foot .sp { flex: 1; }
 
-    /* ── Background ──────────────────────────────────────────── */
-    .bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-    .bg-gradient {
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.18), transparent),
-        linear-gradient(180deg, var(--base-900) 0%, var(--base-950) 100%);
-    }
-    .bg-dots {
-      position: absolute; inset: 0;
-      background-image: radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1px);
-      background-size: 24px 24px;
-      mask-image: radial-gradient(ellipse 100% 60% at 50% 0%, black 10%, transparent 80%);
-      -webkit-mask-image: radial-gradient(ellipse 100% 60% at 50% 0%, black 10%, transparent 80%);
-    }
+.kc-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font: 600 10px/1 'JetBrains Mono', monospace; white-space: nowrap; }
+.kc-pill .d { width: 5px; height: 5px; border-radius: 50%; }
+.kc-badge { font: 600 10px/1 'JetBrains Mono', monospace; border-radius: 5px; padding: 3px 8px; }
+.kc-badge.full { color: var(--text2); background: var(--panel2); }
+.kc-badge.best { color: var(--muted); background: transparent; border: 1px dashed var(--border); }
+.kc-svglink { font: 500 11px/1 'JetBrains Mono', monospace; color: var(--faint); }
+.kc-svglink:hover { color: var(--text2); }
+.kc-copy { display: inline-flex; align-items: center; background: transparent; border: 0; color: var(--faint); cursor: pointer; padding: 2px; }
+.kc-copy:hover { color: var(--accent); }
+.kc-copy svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
+.kc-open { font: 500 11px/1 'JetBrains Mono', monospace; color: var(--text2); }
+.kc-card:hover .kc-open { color: var(--accent); }
 
-    /* ── Nav ─────────────────────────────────────────────────── */
-    nav {
-      position: sticky; top: 0; z-index: 50;
-      border-bottom: 1px solid var(--glass-border);
-      background: rgba(10, 15, 30, 0.65);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-    .nav-inner {
-      max-width: 1280px; margin: 0 auto; padding: 0 24px;
-      height: 60px; display: flex; align-items: center; gap: 12px;
-    }
-    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 16px rgba(99, 102, 241, 0.3); flex-shrink: 0;
-    }
-    .nav-icon svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .nav-wordmark { font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
-    .nav-wordmark span { color: rgba(255,255,255,0.35); font-weight: 400; }
+/* list overrides */
+.kc-gallery.list .kc-card { display: flex; align-items: center; gap: 16px; border-left-width: 4px; padding: 11px 16px 11px 12px; }
+.kc-gallery.list .kc-card:hover { transform: translateX(3px); }
+.kc-gallery.list .kc-card-prev { width: 104px; height: 62px; flex: none; border: 1px solid var(--border2); border-bottom: 1px solid var(--border2); border-radius: 7px; }
+.kc-gallery.list .kc-prev-img { padding: 6px; }
+.kc-gallery.list .kc-card-main { flex: 1; min-width: 0; padding: 0; display: flex; align-items: center; gap: 14px; }
+.kc-gallery.list .kc-card-top { margin: 0; flex: 1; min-width: 0; }
+.kc-gallery.list .kc-card-top h2 { flex: none; }
+.kc-gallery.list .kc-card-sum { display: none; }
+.kc-gallery.list .kc-card-foot { margin: 0; padding: 0; border: 0; flex: none; }
+.kc-gallery.list .kc-card-foot .sp, .kc-gallery.list .kc-open, .kc-gallery.list .kc-svglink { display: none; }
 
-    /* ── Main ────────────────────────────────────────────────── */
-    main { position: relative; z-index: 10; max-width: 1280px; margin: 0 auto; padding: 64px 24px 96px; }
+/* empty state */
+.kc-empty {
+  display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  padding: 70px 20px; border: 1px dashed var(--border); border-radius: 16px; background: var(--panel);
+}
+.kc-empty.show { display: flex; }
+.kc-empty-mark { width: 52px; height: 52px; border-radius: 14px; background: var(--panel2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.kc-empty-mark svg { width: 24px; height: 24px; fill: none; stroke: var(--muted); stroke-width: 1.7; stroke-linecap: round; }
+.kc-empty h3 { font: 600 15px system-ui; color: var(--text); }
+.kc-empty p { font: 400 12.5px/1.6 system-ui; color: var(--muted); max-width: 320px; margin-top: 6px; }
+.kc-empty button { margin-top: 18px; font: 600 12px system-ui; color: #fff; background: var(--accent); border: 0; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
 
-    /* ── Hero ────────────────────────────────────────────────── */
-    .hero { max-width: 680px; margin-bottom: 72px; animation: fade-up 0.6s ease both; }
-    .hero h1 {
-      font-size: clamp(2.4rem, 5vw, 3.6rem);
-      font-weight: 700; letter-spacing: -0.04em; line-height: 1.08;
-      background: linear-gradient(140deg, #fff 30%, #94a3b8 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      margin-bottom: 20px;
-    }
-    .hero p { font-size: 1.05rem; font-weight: 300; color: var(--muted); line-height: 1.65; max-width: 560px; }
+/* toast */
+.kc-toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(12px); z-index: 60;
+  display: flex; align-items: center; gap: 9px; padding: 11px 17px; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 11px; box-shadow: 0 14px 40px rgba(0,0,0,.4);
+  font: 600 12.5px system-ui; color: var(--text); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.kc-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.kc-toast .d { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
 
-    /* ── Toolbar ─────────────────────────────────────────────── */
-    .toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; margin-bottom: 24px; padding: 10px 16px;
-      background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border); border-radius: 14px;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.04);
-      animation: fade-up 0.6s 0.1s ease both;
-    }
-    .toolbar-count { font-family: 'Geist Mono', monospace; font-size: 0.8rem; color: var(--muted); }
-
-    /* ── View toggle ─────────────────────────────────────────── */
-    .view-toggle {
-      position: relative; display: inline-flex;
-      background: var(--base-950); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 999px; padding: 4px;
-    }
-    .toggle-indicator {
-      position: absolute; inset: 4px; width: calc(50% - 4px);
-      background: rgba(255,255,255,0.1); border-radius: 999px;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      pointer-events: none;
-    }
-    .toggle-btn {
-      position: relative; z-index: 1;
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border: none; background: transparent;
-      border-radius: 999px; font-family: 'Geist', sans-serif; font-size: 0.82rem;
-      font-weight: 500; cursor: pointer; transition: color 0.2s ease;
-      color: var(--muted); white-space: nowrap;
-    }
-    .toggle-btn.active { color: #fff; }
-    .toggle-btn svg {
-      width: 14px; height: 14px; stroke: currentColor; fill: none;
-      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
-    }
-
-    /* ── Gallery grid ────────────────────────────────────────── */
-    .gallery { animation: fade-up 0.6s 0.2s ease both; }
-    .gallery.view-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 20px;
-    }
-    .gallery.view-grid .card { flex-direction: column; border-left: 1px solid var(--glass-border) !important; }
-    .gallery.view-grid .card-preview { width: 100%; height: 210px; border-bottom: 1px solid var(--glass-border); border-radius: 0; flex-shrink: unset; margin: 0; }
-    .gallery.view-grid .card-list-meta { display: none; }
-
-    /* ── Gallery list ────────────────────────────────────────── */
-    .gallery.view-list { display: flex; flex-direction: column; gap: 10px; }
-    .gallery.view-list .card { flex-direction: row; align-items: center; min-height: 80px; padding: 10px 16px 10px 10px; border-left-width: 4px !important; }
-    .gallery.view-list .card-preview { width: 96px; height: 60px; border-radius: 6px; border: 1px solid var(--glass-border); flex-shrink: 0; margin-right: 16px; }
-    .gallery.view-list .card-preview img { object-fit: contain; padding: 6px; filter: invert(1) hue-rotate(180deg) brightness(0.85); }
-    .gallery.view-list .card-body { display: none; }
-    .gallery.view-list .card-grid-meta { display: none; }
-    .gallery.view-list .card-list-meta { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0; }
-
-    /* ── Card base ───────────────────────────────────────────── */
-    .card {
-      display: flex;
-      background: rgba(20, 28, 48, 0.55);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--glass-border); border-radius: 16px;
-      overflow: hidden; cursor: pointer; position: relative;
-      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-    }
-    .card-link { position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
-    .link-muted { position: relative; z-index: 1; }
-
-    .gallery.view-grid .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px -10px rgba(var(--tool-rgb), 0.18), 0 0 0 1px rgba(var(--tool-rgb), 0.22);
-    }
-    .gallery.view-list .card:hover { transform: translateX(4px); background: rgba(255,255,255,0.02); }
-    .card:hover .card-preview img { transform: scale(1.04); opacity: 1; }
-
-    /* ── Card preview ────────────────────────────────────────── */
-    .card-preview {
-      position: relative; overflow: hidden;
-      background: var(--base-900);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .card-preview img {
-      display: block; width: 100%; height: 100%;
-      object-fit: contain; padding: 12px;
-      filter: invert(1) hue-rotate(180deg);
-      transition: transform 0.45s ease, opacity 0.45s ease;
-      opacity: 0.85;
-    }
-    .card-preview::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(20,28,48,0.85) 0%, transparent 50%);
-      pointer-events: none;
-    }
-
-    /* ── Card content ────────────────────────────────────────── */
-    .card-content { display: flex; flex-direction: column; padding: 18px; flex: 1; min-width: 0; }
-    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-    .card-title { font-size: 1rem; font-weight: 600; color: #f1f5f9; line-height: 1.3; flex: 1; min-width: 0; transition: color 0.2s ease; }
-    .card:hover .card-title { color: rgb(var(--tool-rgb)); }
-    .card-body { font-size: 0.83rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; flex: 1; }
-
-    /* ── Pills & badges ──────────────────────────────────────── */
-    .pill {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 8px; border-radius: 999px;
-      font-family: 'Geist Mono', monospace; font-size: 0.72rem; font-weight: 500;
-      white-space: nowrap; flex-shrink: 0;
-    }
-    .pill-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .pill-tool { background: rgba(var(--tool-rgb), 0.12); border: 1px solid rgba(var(--tool-rgb), 0.25); color: rgb(var(--tool-rgb)); }
-    .pill-tool .pill-dot { background: rgb(var(--tool-rgb)); }
-    .badge-full { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; }
-    .badge-best { background: transparent; border: 1px dashed rgba(255,255,255,0.2); color: #64748b; }
-
-    /* ── Card footer ─────────────────────────────────────────── */
-    .card-grid-meta {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      padding-top: 12px; border-top: 1px solid var(--glass-border); margin-top: auto;
-    }
-    .card-grid-meta .spacer { flex: 1; }
-    .card-list-meta { display: none; }
-
-    /* ── Action links ────────────────────────────────────────── */
-    .link-muted {
-      font-family: 'Geist Mono', monospace; font-size: 0.75rem;
-      color: #475569; transition: color 0.2s ease;
-    }
-    .link-muted:hover { color: #94a3b8; text-decoration: none; }
-
-    /* ── Animations ──────────────────────────────────────────── */
-    @keyframes fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* ── Responsive ──────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      main { padding: 40px 14px 64px; }
-      .hero { margin-bottom: 48px; }
-      .toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
-      .view-toggle { align-self: flex-end; }
-      .gallery.view-grid { grid-template-columns: 1fr; }
-      .gallery.view-list .card-preview { display: none; }
-    }
-  </style>
+@media (max-width: 720px) {
+  .kc-rail { display: none; }
+  .kc-searchbar { max-width: none; }
+  .kc-gallery.grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
-  <div class="bg-layer" aria-hidden="true">
-    <div class="bg-gradient"></div>
-    <div class="bg-dots"></div>
-  </div>
-  <nav>
-    <div class="nav-inner">
-      <a class="nav-logo" href=".">
-        <div class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><line x1="7" y1="11.3" x2="17" y2="6.7"/><line x1="7" y1="12.7" x2="17" y2="17.3"/></svg>
+  <div id="app" data-theme="dark">
+    <div class="kc-top">
+      <div class="kc-logo">
+        <span class="kc-logo-mark"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 11.3 17 6.7M7 12.7 17 17.3"/></svg></span>
+        <b>kroki</b><span>diagrams</span>
+      </div>
+      <label class="kc-searchbar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" placeholder="Search diagrams…" autocomplete="off">
+      </label>
+      <div class="kc-top-right">
+        <div class="kc-viewtoggle">
+          <button id="view-grid" class="active" type="button" aria-label="Grid view"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+          <button id="view-list" type="button" aria-label="List view"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></button>
         </div>
-        <span class="nav-wordmark">Kroki <span>Diagrams</span></span>
-      </a>
-    </div>
-  </nav>
-  <main>
-    <header class="hero">
-      <h1>Kroki Interactive Diagrams</h1>
-      <p>An interactive gallery of system architectures and data flows, rendered across diagram-as-code engines via Kroki.</p>
-    </header>
-    <div class="toolbar">
-      <span class="toolbar-count">5 diagram{"s" if n_entries != 1 else ""}</span>
-      <div class="view-toggle" id="view-toggle" role="group" aria-label="View mode">
-        <div class="toggle-indicator" id="toggle-indicator"></div>
-        <button class="toggle-btn" id="btn-grid" type="button" data-view="grid">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Grid
-        </button>
-        <button class="toggle-btn" id="btn-list" type="button" data-view="list">
-          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
-          List
-        </button>
+        <button class="kc-icon" id="theme-toggle" type="button" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
       </div>
     </div>
-    <div class="gallery view-grid" id="gallery">
-      <article class="card" style="--tool-rgb:168, 85, 247;border-left-color:#a855f7;">
-        <a class="card-link" href="./ai-request-sequence/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open AI Request Sequence"></a>
-        <div class="card-preview">
-          <img src="./ai-request-sequence/rendered.svg" alt="AI Request Sequence diagram preview" loading="lazy">
+    <div class="kc-shell">
+      <aside class="kc-rail">
+        <div class="kc-rail-h">Engines</div>
+        <div class="kc-eng active" data-engine="all"><span class="sw" style="background:var(--text2)"></span><span class="lb">All</span><span class="ct">5</span></div>
+        <div class="kc-eng" data-engine="plantuml"><span class="sw" style="background:#a855f7"></span><span class="lb">plantuml</span><span class="ct">1</span></div>
+        <div class="kc-eng" data-engine="c4plantuml"><span class="sw" style="background:#6366f1"></span><span class="lb">c4plantuml</span><span class="ct">1</span></div>
+        <div class="kc-eng" data-engine="graphviz"><span class="sw" style="background:#fbbf24"></span><span class="lb">graphviz</span><span class="ct">1</span></div>
+        <div class="kc-eng" data-engine="mermaid"><span class="sw" style="background:#2dd4bf"></span><span class="lb">mermaid</span><span class="ct">1</span></div>
+        <div class="kc-eng" data-engine="erd"><span class="sw" style="background:#fb7185"></span><span class="lb">erd</span><span class="ct">1</span></div>
+      </aside>
+      <main class="kc-content">
+        <div class="kc-content-head">
+          <div><h1>Diagram collection</h1><div class="sub">docs/diagrams &middot; <span id="shown-count">5 shown</span></div></div>
+          <div class="sort">sorted: recent</div>
         </div>
-        <div class="card-content">
-          <div class="card-header">
-            <h2 class="card-title">AI Request Sequence</h2>
-            <span class="pill pill-tool"><span class="pill-dot"></span>plantuml</span>
-          </div>
-          <p class="card-body">Rendered with plantuml.</p>
-          <div class="card-grid-meta">
-            <span class="pill badge-full">Full</span>
-            <span class="spacer"></span>
-            <a class="link-muted" href="./ai-request-sequence/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
-          <div class="card-list-meta">
-            <span class="pill badge-full">Full</span>
-            <a class="link-muted" href="./ai-request-sequence/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
+        <div class="kc-empty" id="empty">
+          <div class="kc-empty-mark"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+          <h3>No diagrams match</h3>
+          <p id="empty-text"></p>
+          <button id="reset-filters" type="button">Reset filters</button>
         </div>
-      </article>
-      <article class="card" style="--tool-rgb:45, 212, 191;border-left-color:#2dd4bf;">
-        <a class="card-link" href="./market-ops-control-loop/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Market Ops Control Loop"></a>
-        <div class="card-preview">
-          <img src="./market-ops-control-loop/rendered.svg" alt="Market Ops Control Loop diagram preview" loading="lazy">
-        </div>
-        <div class="card-content">
-          <div class="card-header">
-            <h2 class="card-title">Market Ops Control Loop</h2>
-            <span class="pill pill-tool"><span class="pill-dot"></span>mermaid</span>
-          </div>
-          <p class="card-body">Rendered with mermaid.</p>
-          <div class="card-grid-meta">
-            <span class="pill badge-best">Best Effort</span>
-            <span class="spacer"></span>
-            <a class="link-muted" href="./market-ops-control-loop/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
-          <div class="card-list-meta">
-            <span class="pill badge-best">Best Effort</span>
-            <a class="link-muted" href="./market-ops-control-loop/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
+        <div class="kc-gallery grid" id="gallery">
+      <article class="kc-card" data-title="AI Request Sequence" data-engine="plantuml" data-summary="Rendered with plantuml." data-folder="ai-request-sequence" style="border-left-color:#a855f7">
+        <a class="kc-card-link" href="./ai-request-sequence/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open AI Request Sequence"></a>
+        <div class="kc-card-prev"><div class="kc-prev-img" style="background-image:url(./ai-request-sequence/rendered.svg)"></div></div>
+        <div class="kc-card-main">
+          <div class="kc-card-top"><h2>AI Request Sequence</h2><span class="kc-pill" style="background:rgba(168, 85, 247,.13);border:1px solid rgba(168, 85, 247,.3);color:#a855f7"><span class="d" style="background:#a855f7"></span>plantuml</span></div>
+          <p class="kc-card-sum">Rendered with plantuml.</p>
+          <div class="kc-card-foot"><span class="kc-badge full">Full</span><span class="sp"></span><button class="kc-copy" type="button" title="Copy Kroki URL" data-url="https://kroki.io/plantuml/svg/jVVtT9swEP6eX3HqPiLUllLehBApJIiJsULR-OwmB_Xq2JnttDC0_76znb6ktNpSqbVzj5-7e-5Jemks07YqRHRu7LvAi0grZeEjAkiVtPesQIg1Z6K-MeK_Ebo92g1YNn3VqpL5lRJKw5c0dh-K3HGJ9b2-v6I_keVW4JI2sBwtdi4xjJXI6xv14W7cjQ8SOsy0VnN_eI36MD7tXJ82T_T81UjSdeczS9GPuuib9aI7J4cHx4N_M6f-Iq6S5OIZL5m02xmTJD1M_4Nx2V3OLBszg9vpKGsv6TTp0n58dNDbQferwmoXVy_pp_0m13HSP7462MHl5lvu4DpJByRIgyvuxMlVZwfXebs2WLBCfAuPSLUaCyP3KzOM6kE9aZajbijdesYxxGXZAmaA1s1gPLyFG2Zxzt49gPYrVVtXLJugv-9XtUCtr2oMD27pQ361kVLpKWoYKiVCWr9vYn6gtvhGzXjEN5WjWM8sVJXD6OHOR68HG1ULOgwDZUPNbhdFoXfYv3BdwhmMqnHBLZgMJdNcwR6Y94IeFRO5OMFc72cw_D56gvas22a8rYOsJnIhQviuCXOn1JSmqZG4LDBp5tRNxISFzCFyF1FFgZIa4EoCvnHHAjXB_jLZM9MFgU2pJHW5BwVa5pomqE-5LP4RbaWlg1aUhUt610gr3gnniydc3a6DSrdolhChoAQSMTchUlYWtxQU9gU3ZlHCBant1GMzhFoPQDlDoUpcYfzQCZbI4AmlicdYHfr_qcYEDRjXUrDDGVyj4DNa1fWAZWZKQKFUCZW0XAATApwgYFSlMzTAtCuD5a51WDAtikzRZhMQ5F8qslSGu-xmA7nMfq90wYR7tZWaCqDh0bOGb5bwJFu0fsbb0WsbBCgFkzSu0B4TTogA2V9PMLK6ymhu3hBhxtGnmoeoDbmjdhH95JBz9iqVIX-bBj7YnER2PnaaCfTyznE8IUe6aXjEyjbDykwo9wuln4BUlr_wLPihNs5i7jfJJ9O3z3i-YYJHEh5euPSq5QvjgwuuLBSHRvaApp_hLiej1Lx-VJyltxt5hkx8MjKN5pK-3B_tXw"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a class="kc-svglink" href="./ai-request-sequence/rendered.svg" target="_blank" rel="noopener noreferrer">svg</a><span class="kc-open">open &rarr;</span></div>
         </div>
       </article>
-      <article class="card" style="--tool-rgb:251, 191, 36;border-left-color:#fbbf24;">
-        <a class="card-link" href="./signal-orchestration-dag/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Signal Orchestration DAG"></a>
-        <div class="card-preview">
-          <img src="./signal-orchestration-dag/rendered.svg" alt="Signal Orchestration DAG diagram preview" loading="lazy">
-        </div>
-        <div class="card-content">
-          <div class="card-header">
-            <h2 class="card-title">Signal Orchestration DAG</h2>
-            <span class="pill pill-tool"><span class="pill-dot"></span>graphviz</span>
-          </div>
-          <p class="card-body">Rendered with graphviz.</p>
-          <div class="card-grid-meta">
-            <span class="pill badge-full">Full</span>
-            <span class="spacer"></span>
-            <a class="link-muted" href="./signal-orchestration-dag/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
-          <div class="card-list-meta">
-            <span class="pill badge-full">Full</span>
-            <a class="link-muted" href="./signal-orchestration-dag/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
+      <article class="kc-card" data-title="Market Ops Control Loop" data-engine="mermaid" data-summary="Rendered with mermaid." data-folder="market-ops-control-loop" style="border-left-color:#2dd4bf">
+        <a class="kc-card-link" href="./market-ops-control-loop/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Market Ops Control Loop"></a>
+        <div class="kc-card-prev"><div class="kc-prev-img" style="background-image:url(./market-ops-control-loop/rendered.svg)"></div></div>
+        <div class="kc-card-main">
+          <div class="kc-card-top"><h2>Market Ops Control Loop</h2><span class="kc-pill" style="background:rgba(45, 212, 191,.13);border:1px solid rgba(45, 212, 191,.3);color:#2dd4bf"><span class="d" style="background:#2dd4bf"></span>mermaid</span></div>
+          <p class="kc-card-sum">Rendered with mermaid.</p>
+          <div class="kc-card-foot"><span class="kc-badge best">Best effort</span><span class="sp"></span><button class="kc-copy" type="button" title="Copy Kroki URL" data-url="https://kroki.io/mermaid/svg/hVVtbxo5EP7Or7CoIlopOYUQQsuHO_G210p3vShNK1VWPhjvwPow9p7tJaGQ_35jexfIUlIixbueZ54ZPzOzPjvbCCVcn2wahLRcBkto9Ulryiy0zndb35gRbCrBtiKQeARfzI0uVOrxb5KB_wsuaMyNWDKzHmmpTTBPJsl1MqyZ7-HJ7SHtQXtwNalBhtqkYPag68GHy_GHCmSBa5W-CJQkSWdyeQR4LdQOVA-WdAc3V50K5sA48TJWZ9JNunX7a6EqTD1Sb9Ltja4qlBQK9rZu-FW2mVYuYUsh1944wLLIc2KZshcWjJgdwr6IH6GW7ev8qYXbz43n57OzxkzqR54x48hfd7hri-ncsDwjn5RjC6DNuBKmUjJCFjxN8yGQpsIAd0Kr6EiIMwxP8Zbeh5XcGzGfg3l41-_3czAWgRcXvxMReUcsd4UBYuC_AqwjPHI_IBgzXwkOgTOigyOXzFoxW2--mjkoR7Qh2G8OxfnjGb08gdEyeFVQ77e9i6AteWRmSUcZ8EV4JJzxDHzAlDlmnTZw7BxjbcnMAPwAmoSF8MIYn4IRdkGsYrnNdEj9MIkQIyTu43wUboPeNkMl7SPKw1ZMSD9EtexBpY3DOtxKppRQc9qsnkItvjEpMG-U_1Q5cgM5HVgLSwyCOjsjYMXkT5QOWebITv8EBYY5iLUMe_WK-L3ggF0m3Hpzi2qBLd8I9_Lao4IwxeTaOjqxnMnAr6u9h5ftYWAlLNBB-m-BXZEbvcxDqXMtBV8_vCrV5Al44SWgzd1jEOtvjclpg9qdEgsCHuhY2Jw5nhHr2BxSEgazLtUy0tGSlsyElCFOiiN31MIlOngGwGbs_xM21SsUIvNNoWV6pJlQXKTYZfSfHNTuLTiw9ECIKJuW0n-C6V35QLDr8Qwq9Q2DU4Sur4s3BilWYNa0WT2FI-EwczjZYsVUCpvR27hi8bheLpE5NGZdNqUdjhX9HJbyaxFiFHnqe-Lrp7p00SM4M8MzzIoO4urdkXaK942EuluJjX5FKhx9ewfYt2si9fxdfeJLIaopDWP_Hey2Ol3d9llvw2zhfvwqxPGJO-UYVLiyx9EQ-_oENIQrWxAtoUv2sXZp7PeDQ9USnr2qejhyGbRRfsvGMCPlhPlO7b-5fH991Ruec3-n9P0Vib9zi32xADT2OsOb6vXiUaQu67d_6-ZPh3RVWSNfu33zfjg-wdcZ9ZLR5S_4dvUoGeO1XTHGS3PHGO_hXzBWw1Hyhav5BF-8bX_G9z8"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a class="kc-svglink" href="./market-ops-control-loop/rendered.svg" target="_blank" rel="noopener noreferrer">svg</a><span class="kc-open">open &rarr;</span></div>
         </div>
       </article>
-      <article class="card" style="--tool-rgb:251, 113, 133;border-left-color:#fb7185;">
-        <a class="card-link" href="./trading-domain-erd/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Trading Domain ERD"></a>
-        <div class="card-preview">
-          <img src="./trading-domain-erd/rendered.svg" alt="Trading Domain ERD diagram preview" loading="lazy">
-        </div>
-        <div class="card-content">
-          <div class="card-header">
-            <h2 class="card-title">Trading Domain ERD</h2>
-            <span class="pill pill-tool"><span class="pill-dot"></span>erd</span>
-          </div>
-          <p class="card-body">Rendered with erd.</p>
-          <div class="card-grid-meta">
-            <span class="pill badge-best">Best Effort</span>
-            <span class="spacer"></span>
-            <a class="link-muted" href="./trading-domain-erd/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
-          <div class="card-list-meta">
-            <span class="pill badge-best">Best Effort</span>
-            <a class="link-muted" href="./trading-domain-erd/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
+      <article class="kc-card" data-title="Signal Orchestration DAG" data-engine="graphviz" data-summary="Rendered with graphviz." data-folder="signal-orchestration-dag" style="border-left-color:#fbbf24">
+        <a class="kc-card-link" href="./signal-orchestration-dag/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Signal Orchestration DAG"></a>
+        <div class="kc-card-prev"><div class="kc-prev-img" style="background-image:url(./signal-orchestration-dag/rendered.svg)"></div></div>
+        <div class="kc-card-main">
+          <div class="kc-card-top"><h2>Signal Orchestration DAG</h2><span class="kc-pill" style="background:rgba(251, 191, 36,.13);border:1px solid rgba(251, 191, 36,.3);color:#fbbf24"><span class="d" style="background:#fbbf24"></span>graphviz</span></div>
+          <p class="kc-card-sum">Rendered with graphviz.</p>
+          <div class="kc-card-foot"><span class="kc-badge full">Full</span><span class="sp"></span><button class="kc-copy" type="button" title="Copy Kroki URL" data-url="https://kroki.io/graphviz/svg/rVZtb-I4EP7Or7DYr90VkFKoopwUaLy70t1pRe_bqjqZZABfjR3ZTl-26n8_x3ZMElC3lQgSYmYez-vjIQXdSlLu0Ff0MkDI_f5pfiEkCb8vqEz-XF1YWZWMclCJkHonnIqLAhSUyejL_CKccYprp1hvc8GETIafcFp_hk69EVxzsodk-A3YA2iak5ZF0V-QjCOnKEmRDEdfLqceIB5AMlImG8IU-KiwpzyXQqlEywqM7i4eDFx6vhi1IyUka_Hka9HPzASXouIFFBcbyhgUTQZGaJLOMnyJF97QKC-XV-n15AOVTA6Kxsc4HaeTzCP3RG4pr6sczy_M12gYSoBi25TQHJ3axx8tgT_SQu-ScTMCIqV4tHHDVN6T4-g4x8g-h1xUtXb8yFmlNMh_KS8rrSxxEGJkDSwZ_kXkPWhEeIFuNdGAvlvQMO7UcJ0uZjeRV7Ybjud4gXFjOJF33O9t_MZAna2UNKd8i376FH94GUM981PzvnMHSZ4bfzocTL18y0mpdkK_eZjDowon_66FW7rlhL156MXeoESZouMm77jJI3Y-Xw3y9eQ8ciGhOw0XEi2NoTeBaDnDy9GJCWQpjs49AS7knjCDPjQkaDw_ul0Zj6_mi5ta2eIjto9R9mrwvdsA0ZWEQ9OxU6BFRVkB8gwh6uGADAF8d1dWewb3JSOct_xnT5BXmgqOfjjLGWJ0GBbmEofuxb7IOGTzFt-4loL1NsAt2YB-thvgBhg16_q5x72beTo1-_zE7cd4nmXn5Z6k6j50dFULX81a6nUSR9kUT1tNm2XT2XIS5g4PFB6Dl2_VnnC0ssqeo9H8cjJb_G4ko1m0uMKN97UUbVYtnLgSlT6auHETZaOWJzxNryZRWFhVQVvrykr_SELZB90wkPpwj1IrfqxjHZrVI4h9E2NfbuySjZtggWXNtv78x4m1YUhwr1yMZjmfxJVC0frieKzdmyeBNYXhSXtYMBtsuBCD1moxen89BmEbGF3_4mpRotxcAFoYqvkcGkztok3JUgqTLRSmoFbGFmKgPW6Q0sAfDLc7oB497TtDThR4lLMeOzMkrsz68j774H5NtUXB8cC7VG-zwIczvrq8hLDWtCQ5HLWni64NbWDLa5emNTuVXTsS_oNcNzyx3o7h5o2RFmAIVNAtKM8Aj6nRvf9-ZV9mJGwMDXbv78Lr4H8"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a class="kc-svglink" href="./signal-orchestration-dag/rendered.svg" target="_blank" rel="noopener noreferrer">svg</a><span class="kc-open">open &rarr;</span></div>
         </div>
       </article>
-      <article class="card" style="--tool-rgb:99, 102, 241;border-left-color:#6366f1;">
-        <a class="card-link" href="./trading-platform-container/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Trading Platform Container"></a>
-        <div class="card-preview">
-          <img src="./trading-platform-container/rendered.svg" alt="Trading Platform Container diagram preview" loading="lazy">
-        </div>
-        <div class="card-content">
-          <div class="card-header">
-            <h2 class="card-title">Trading Platform Container</h2>
-            <span class="pill pill-tool"><span class="pill-dot"></span>c4plantuml</span>
-          </div>
-          <p class="card-body">Rendered with c4plantuml.</p>
-          <div class="card-grid-meta">
-            <span class="pill badge-full">Full</span>
-            <span class="spacer"></span>
-            <a class="link-muted" href="./trading-platform-container/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
-          <div class="card-list-meta">
-            <span class="pill badge-full">Full</span>
-            <a class="link-muted" href="./trading-platform-container/rendered.svg" target="_blank" rel="noopener noreferrer">SVG</a>
-          </div>
+      <article class="kc-card" data-title="Trading Domain ERD" data-engine="erd" data-summary="Rendered with erd." data-folder="trading-domain-erd" style="border-left-color:#fb7185">
+        <a class="kc-card-link" href="./trading-domain-erd/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Trading Domain ERD"></a>
+        <div class="kc-card-prev"><div class="kc-prev-img" style="background-image:url(./trading-domain-erd/rendered.svg)"></div></div>
+        <div class="kc-card-main">
+          <div class="kc-card-top"><h2>Trading Domain ERD</h2><span class="kc-pill" style="background:rgba(251, 113, 133,.13);border:1px solid rgba(251, 113, 133,.3);color:#fb7185"><span class="d" style="background:#fb7185"></span>erd</span></div>
+          <p class="kc-card-sum">Rendered with erd.</p>
+          <div class="kc-card-foot"><span class="kc-badge best">Best effort</span><span class="sp"></span><button class="kc-copy" type="button" title="Copy Kroki URL" data-url="https://kroki.io/erd/svg/pVPBToQwEL33K8geN9mDV2-omHBAN7uQmBBDCsxqY2lxOmwkxn8XqRswO-Gwntq-18x78zrNMwfonkUQrFUdfGpZgr4OVlkW362-BhQaqfSEp9FTOuKkAM9gkW8t0sFqZRdKdoNiwTKNNLUkYORK6aCoqp6RvEH7BhhWle0MLci2J2u89hFMxylLX7hAODDie8LB8Eu_68zl0i3apiWecySpc4yvgUCCupA0I-Mk2qdhsh29PWK9-LTu13uBneHFyzHa4hQBX6VvSstNiFM18L65hkR-r7RecGt_uuEtvNNsLh6yJNrFtz7YDw4XeagB6V_JODgCKuqZBqtXaQycJyLGnxZcbTbrYPomYtp66u84n9HzgRPzg6f9mwu_eGjMlbnqQxDf"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a class="kc-svglink" href="./trading-domain-erd/rendered.svg" target="_blank" rel="noopener noreferrer">svg</a><span class="kc-open">open &rarr;</span></div>
         </div>
       </article>
+      <article class="kc-card" data-title="Trading Platform Container" data-engine="c4plantuml" data-summary="Rendered with c4plantuml." data-folder="trading-platform-container" style="border-left-color:#6366f1">
+        <a class="kc-card-link" href="./trading-platform-container/interactive.html" target="_blank" rel="noopener noreferrer" aria-label="Open Trading Platform Container"></a>
+        <div class="kc-card-prev"><div class="kc-prev-img" style="background-image:url(./trading-platform-container/rendered.svg)"></div></div>
+        <div class="kc-card-main">
+          <div class="kc-card-top"><h2>Trading Platform Container</h2><span class="kc-pill" style="background:rgba(99, 102, 241,.13);border:1px solid rgba(99, 102, 241,.3);color:#6366f1"><span class="d" style="background:#6366f1"></span>c4plantuml</span></div>
+          <p class="kc-card-sum">Rendered with c4plantuml.</p>
+          <div class="kc-card-foot"><span class="kc-badge full">Full</span><span class="sp"></span><button class="kc-copy" type="button" title="Copy Kroki URL" data-url="https://kroki.io/c4plantuml/svg/rVZdc-I2FH3nV6i0D2QKySZkA9uZzizhY5NOdkNDspk-MbItjIosuZIM8XT633sk2Q5hs9M8FB4Qsu459-Pca300lmpbZKL1A5exKBJG1tbm5peTE013xym36yIqDNOxkpZJexyr7CQXVDqbnrGJ4NHJ-Lw3d1sPn29OMmos09hajmFBuWT6OHf4rZvRH7cP98ub6ex-eXf96eq-c9RqPeQJtWwqWAbwhS0F67Rzpo2S7S75KUrHSij9a_vHd8Pzs8Gl21sBtt6d-Y8_qXTCdHN60L-8mLWPXoVnT3BQUrF8jediPBgNP7yV5_3oYjDof4fHlMhE9hL-9PRieDl5K3x_PJiN3_1XGK_xDKfD6Yf-W3kGk8FkePYdnrgu40uG8_5wMnn_v0TSMCyT6CUJsPrTd4ckp6PT0dn0W5IZynH2XI1LVciE6jKw7KOO3PetqJdD921Q75ioAAVcbmTjP87Yoi5N1P4D09bcS61jNQVyl7R_L9Au5N7_hVX7rpCG5FpluTVdsqM2XjNDNDebLqEyITTHwy222BOLC8sh26MalEIEkABQbnNDRuGfB2VbznYGACqjgjPjoTRD-5YErsTMON8WXj_LOl0dPLYrpTMgjAqrYKwK433lMiXz6mn7iPzdIqRp8s6ORbAIIbltowRzXnxBQo7_NG459wESjJBcGe6i6BITM0k1V_DLedslieZC9BK1kwSzyTK4uE9Dc-4i1S5BiMGBkNH82sHPMHqqJRxfdwH5V4FTRCukTKZIZZFwS4RKU__X45MVlT0cOODZKb3xpZrWGSePfstHMhaqSAiqRn5T0X5s1BiWRaLskkwlTJCYCoGKRlrB1EWeuRqkDBS0KuM-a6h4-w4_ZCrhpU_hvLRr8C-Y3vLY70yfkMFCM4I0xBsQ5ErwuCRsS0VBQ2a9iklaUJ2YA5qYws4rxOSoFCNjtxE0k3AfzyPVGfRidsDQDG8ALx6zVtr2BN-yBMGAgctXwphEnaQWg9PMwiodAlHGppp5gge8VJzjteh9NVkKmVau47cR6b7zSLhTQAT7LY244LYkV4WbHGgAJu-ZGy5Wl-RnMkZSNleQr2e_Ab6My5qzQu_WHZFwmko4yGPH-E_TGNMn29kyjcYGxle_IKPrkCyKBnQRutxA5wD0SvG1dyh7EOwpXlOZMl-9sHTC9bn4TKEsSzBfaAVVa27LZMEOkKSyfFW61nILHocmmNFI89ihLQSNNx4HPblWauPbHIOrmT-hV1EB98Q9aGZIeFJPDlwJeIJB7VbVSX8gNOHYabsGcDu1rMZelBhjjYT2APzJJLDQJMykneaWvYBq2m_CTV6NQ2pKGRN3-TDEqtqf6mDVOV8x6NyYNnBGJn5JQlHgDy4zB1ZNXe_CqDB-OAkWDFbQyYHBXhVnLLiVI-3VbDVFlHGABP1-66QP241t7qhw8eIrOLef3epg0Pi8iAQ3jiNI9RkwRLuXxXqgvnDaZ7JRyzOau8_1wOyUW-QhXQ20p35-pyyKPEfPm7pLMPv9S-Pq9hFXuU_TLxNc4z4ymbg73r8"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a class="kc-svglink" href="./trading-platform-container/rendered.svg" target="_blank" rel="noopener noreferrer">svg</a><span class="kc-open">open &rarr;</span></div>
+        </div>
+      </article>
+        </div>
+      </main>
     </div>
-  </main>
+    <div class="kc-toast" id="toast"><span class="d"></span>Kroki URL copied to clipboard</div>
+  </div>
   <script>
-    (function () {
-      const storageKey = "kroki-diagrams-index-view";
-      const gallery    = document.getElementById("gallery");
-      const indicator  = document.getElementById("toggle-indicator");
-      const btnGrid    = document.getElementById("btn-grid");
-      const btnList    = document.getElementById("btn-list");
+(function () {
+  const app = document.getElementById("app");
+  const THEME_KEY = "kroki-diagrams-theme";
+  const VIEW_KEY = "kroki-diagrams-index-view";
 
-      function applyView(view) {
-        const isGrid = view === "grid";
-        gallery.classList.toggle("view-grid", isGrid);
-        gallery.classList.toggle("view-list", !isGrid);
-        indicator.style.transform = isGrid ? "translateX(0)" : "translateX(100%)";
-        btnGrid.classList.toggle("active", isGrid);
-        btnList.classList.toggle("active", !isGrid);
-        try { localStorage.setItem(storageKey, view); } catch (_) {}
-      }
+  // theme
+  try { const s = localStorage.getItem(THEME_KEY); if (s === "light" || s === "dark") app.setAttribute("data-theme", s); } catch (e) {}
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const next = app.getAttribute("data-theme") === "light" ? "dark" : "light";
+    app.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  });
 
-      let initial = "grid";
-      try {
-        const saved = localStorage.getItem(storageKey);
-        if (saved === "grid" || saved === "list") initial = saved;
-      } catch (_) {}
+  // view (grid / list)
+  const gallery = document.getElementById("gallery");
+  const btnGrid = document.getElementById("view-grid");
+  const btnList = document.getElementById("view-list");
+  function applyView(v) {
+    const grid = v === "grid";
+    gallery.classList.toggle("grid", grid);
+    gallery.classList.toggle("list", !grid);
+    btnGrid.classList.toggle("active", grid);
+    btnList.classList.toggle("active", !grid);
+    try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
+  }
+  let initView = "grid";
+  try { const s = localStorage.getItem(VIEW_KEY); if (s === "grid" || s === "list") initView = s; } catch (e) {}
+  applyView(initView);
+  btnGrid.addEventListener("click", () => applyView("grid"));
+  btnList.addEventListener("click", () => applyView("list"));
 
-      applyView(initial);
-      btnGrid.addEventListener("click", () => applyView("grid"));
-      btnList.addEventListener("click", () => applyView("list"));
-    })();
-  </script>
+  // search + engine filter
+  const cards = Array.from(document.querySelectorAll(".kc-card"));
+  const searchEl = document.getElementById("search");
+  const railItems = Array.from(document.querySelectorAll(".kc-eng"));
+  const empty = document.getElementById("empty");
+  const emptyText = document.getElementById("empty-text");
+  const countEl = document.getElementById("shown-count");
+  let activeEngine = "all";
+
+  function refresh() {
+    const q = searchEl.value.trim().toLowerCase();
+    let shown = 0;
+    cards.forEach((c) => {
+      const okE = activeEngine === "all" || c.dataset.engine === activeEngine;
+      const hay = (c.dataset.title + " " + c.dataset.engine + " " + c.dataset.summary + " " + c.dataset.folder).toLowerCase();
+      const okQ = !q || hay.includes(q);
+      const show = okE && okQ;
+      c.style.display = show ? "" : "none";
+      if (show) shown++;
+    });
+    countEl.textContent = shown + (shown === 1 ? " shown" : " shown");
+    empty.classList.toggle("show", shown === 0);
+    if (shown === 0) {
+      const bits = [];
+      if (q) bits.push('“' + q + '”');
+      if (activeEngine !== "all") bits.push("in " + activeEngine);
+      emptyText.textContent = "Nothing matches " + (bits.join(" ") || "the current filters") + ".";
+    }
+  }
+  searchEl.addEventListener("input", refresh);
+  railItems.forEach((it) => it.addEventListener("click", () => {
+    activeEngine = it.dataset.engine;
+    railItems.forEach((r) => r.classList.toggle("active", r === it));
+    refresh();
+  }));
+  document.getElementById("reset-filters").addEventListener("click", () => {
+    searchEl.value = ""; activeEngine = "all";
+    railItems.forEach((r) => r.classList.toggle("active", r.dataset.engine === "all"));
+    refresh();
+  });
+
+  // copy kroki url
+  const toast = document.getElementById("toast");
+  document.querySelectorAll(".kc-copy").forEach((b) => b.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const url = b.dataset.url;
+    if (url && navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+    toast.classList.add("show");
+    clearTimeout(window.__kcToast);
+    window.__kcToast = setTimeout(() => toast.classList.remove("show"), 1900);
+  }));
+
+  refresh();
+})();
+</script>
 </body>
 </html>

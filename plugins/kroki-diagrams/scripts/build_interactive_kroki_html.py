@@ -114,6 +114,34 @@ def soften_svg_background(root: ET.Element) -> None:
             break
 
 
+def extract_node_label(group: ET.Element) -> str:
+    texts = group.findall(".//svg:text", NS)
+
+    # C4/PlantUML render the entity name as bold text and everything else
+    # (tech, description) as regular text, one word per element.
+    bold_parts: list[str] = []
+    for text_el in texts:
+        if (text_el.get("font-weight") or "").lower() in {"bold", "700", "800", "900"}:
+            bold_parts.extend(p.strip() for p in text_el.itertext() if p and p.strip())
+    if bold_parts:
+        return " ".join(bold_parts)
+
+    for text_el in texts:
+        parts = [p.strip() for p in text_el.itertext() if p and p.strip()]
+        if parts:
+            return " ".join(parts)
+
+    # Mermaid keeps labels in foreignObject HTML rather than svg:text.
+    parts = [p.strip() for p in group.itertext() if p and p.strip()]
+    return " ".join(parts)
+
+
+def set_node_label(group: ET.Element) -> None:
+    label = extract_node_label(group)
+    if label:
+        group.set("data-node-label", label)
+
+
 def annotate_graphviz_like(root: ET.Element) -> tuple[int, int]:
     node_count = 0
     edge_count = 0
@@ -125,6 +153,7 @@ def annotate_graphviz_like(root: ET.Element) -> tuple[int, int]:
 
         if "node" in classes and title_text:
             group.set("data-node-id", title_text)
+            set_node_label(group)
             append_class(group, "interactive-node")
             node_count += 1
             continue
@@ -156,11 +185,12 @@ def annotate_mermaid(root: ET.Element) -> tuple[int, int]:
         if "node" not in classes:
             continue
 
-        match = re.match(r"^flowchart-(.+)-\d+$", group_id)
+        match = re.search(r"flowchart-(.+)-\d+$", group_id)
         if not match:
             continue
 
         group.set("data-node-id", match.group(1))
+        set_node_label(group)
         append_class(group, "interactive-node")
         node_count += 1
 
@@ -171,7 +201,7 @@ def annotate_mermaid(root: ET.Element) -> tuple[int, int]:
             continue
 
         edge_id = element.get("id") or ""
-        match = re.match(r"^L_([^_]+)_([^_]+)_\d+$", edge_id)
+        match = re.search(r"L_([^_]+)_([^_]+)_\d+$", edge_id)
         if not match:
             continue
 
@@ -198,6 +228,8 @@ def annotate_sequence(root: ET.Element) -> tuple[int, int]:
             if not node_id:
                 continue
             group.set("data-node-id", node_id)
+            if "participant-head" in classes:
+                set_node_label(group)
             append_class(group, "interactive-node")
             node_ids.add(node_id)
             continue
@@ -232,6 +264,7 @@ def annotate_plantuml_description(root: ET.Element) -> tuple[int, int]:
             if not node_id:
                 continue
             group.set("data-node-id", node_id)
+            set_node_label(group)
             append_class(group, "interactive-node")
             node_count += 1
             continue
@@ -675,13 +708,27 @@ VIEWER_SCRIPT = """
     if (item) item.classList.add("sel");
   }
 
-  nodes.forEach((n) => n.addEventListener("click", (ev) => { ev.stopPropagation(); focus(n.dataset.nodeId); }));
-  viewport.addEventListener("click", (ev) => { if (!ev.target.closest("[data-node-id]") && !justDragged) reset(); });
+  // Node clicks are delegated through the viewport: pointer capture during a
+  // drag retargets pointerup (and thus click) to the viewport, so per-node
+  // click listeners would never fire after any capture.
+  viewport.addEventListener("click", (ev) => {
+    if (justDragged) return;
+    const hit = ev.target.closest("[data-node-id]");
+    if (hit) focus(hit.dataset.nodeId);
+    else reset();
+  });
 
   // ── node list ──
   const seen = new Set();
   const order = [];
+  const labels = new Map();
   nodes.forEach((n) => { const id = n.dataset.nodeId; if (!seen.has(id)) { seen.add(id); order.push(id); } });
+  nodes.forEach((n) => {
+    const id = n.dataset.nodeId;
+    const label = (n.dataset.nodeLabel || "").trim();
+    if (label && !labels.has(id)) labels.set(id, label);
+  });
+  const labelFor = (id) => labels.get(id) || id;
   const edgeCount = new Map();
   edges.forEach((e) => {
     edgeCount.set(e.dataset.edgeSource, (edgeCount.get(e.dataset.edgeSource) || 0) + 1);
@@ -695,14 +742,15 @@ VIEWER_SCRIPT = """
       row.className = "kc-node";
       row.dataset.id = id;
       row.innerHTML = '<span class="dot"></span><span class="name"></span><span class="ct mono">' + (edgeCount.get(id) || 0) + "</span>";
-      row.querySelector(".name").textContent = id;
+      row.querySelector(".name").textContent = labelFor(id);
+      row.dataset.hay = (id + " " + labelFor(id)).toLowerCase();
       row.addEventListener("click", () => focus(id));
       nodeListEl.appendChild(row);
     });
     nodeSearch.addEventListener("input", () => {
       const q = nodeSearch.value.trim().toLowerCase();
       nodeListEl.querySelectorAll(".kc-node").forEach((row) => {
-        row.style.display = (!q || row.dataset.id.toLowerCase().includes(q)) ? "" : "none";
+        row.style.display = (!q || row.dataset.hay.includes(q)) ? "" : "none";
       });
     });
   } else {
@@ -722,11 +770,17 @@ VIEWER_SCRIPT = """
   viewport.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
     drag = true; justDragged = false; sx = e.clientX; sy = e.clientY; ox = tx; oy = ty;
-    viewport.classList.add("dragging"); viewport.setPointerCapture(e.pointerId);
+    viewport.classList.add("dragging");
   });
   viewport.addEventListener("pointermove", (e) => {
     if (!drag) return;
-    if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 3) justDragged = true;
+    if (!justDragged && Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 3) {
+      justDragged = true;
+      // Capture only once a real drag starts, so stationary clicks keep their
+      // original target and node selection still works.
+      viewport.setPointerCapture(e.pointerId);
+    }
+    if (!justDragged) return;
     tx = ox + (e.clientX - sx); ty = oy + (e.clientY - sy); apply();
   });
   const endDrag = () => { if (!drag) return; drag = false; viewport.classList.remove("dragging"); setTimeout(() => { justDragged = false; }, 0); };

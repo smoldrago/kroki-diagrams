@@ -6,737 +6,518 @@
   <title>Trading Platform Container</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 
-    :root {
-      --base-950: #04060b;
-      --base-900: #0a0f1e;
-      --base-800: #141c30;
-      --glass-border: rgba(255, 255, 255, 0.07);
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --label-highlight: #a78bfa;
-      --dim-opacity: 0.32;
-      --node-shadow: drop-shadow(0 0 10px rgba(120, 119, 255, 0.45));
-      --focus-ring: rgba(99, 102, 241, 0.4);
-    }
+#app {
+  --bg: #0d0f13; --bg2: #0f1116; --bg3: #0b0d11; --panel: #12141a; --panel2: #161922;
+  --canvas: #08090c; --border: rgba(255,255,255,.08); --border2: rgba(255,255,255,.06);
+  --text: #eceef2; --text2: #a9adb6; --muted: #6b7280; --faint: #565b65;
+  --accent: #8b8ff5; --accent-soft: rgba(139,143,245,.14);
+  --dot: rgba(255,255,255,.05); --input: #0a0b0e;
+  min-height: 100vh; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+#app[data-theme="light"] {
+  --bg: #eceef2; --bg2: #ffffff; --bg3: #f6f7f9; --panel: #ffffff; --panel2: #eef0f4;
+  --canvas: #fafbfc; --border: rgba(15,20,35,.11); --border2: rgba(15,20,35,.07);
+  --text: #161a22; --text2: #454b57; --muted: #727884; --faint: #9aa0ac;
+  --accent: #4f46e5; --accent-soft: rgba(79,70,229,.1);
+  --dot: rgba(15,20,35,.06); --input: #f2f3f6;
+}
+#app[data-theme="dark"] #content svg,
+#app[data-theme="dark"] #mini svg { filter: invert(1) hue-rotate(180deg); }
 
-    html { color-scheme: dark; }
+a { color: inherit; text-decoration: none; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: 'Geist', 'Inter', system-ui, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.15), transparent),
-        linear-gradient(180deg, var(--base-900) 0%, var(--base-950) 100%);
-    }
+/* nav */
+.kc-nav {
+  display: flex; align-items: center; gap: 11px; padding: 0 18px; height: 52px;
+  border-bottom: 1px solid var(--border); background: var(--bg2); flex: none;
+}
+.kc-back {
+  display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 'JetBrains Mono', monospace;
+  color: var(--text2); padding: 6px 11px; background: var(--input);
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.kc-back:hover { color: var(--text); background: var(--panel2); }
+.kc-back svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.kc-sep { color: var(--faint); }
+.kc-title { font: 600 13.5px system-ui; color: var(--text); letter-spacing: -.01em; }
+.kc-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px;
+  font: 600 10px/1 'JetBrains Mono', monospace;
+}
+.kc-pill .d { width: 5px; height: 5px; border-radius: 50%; }
+.kc-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.kc-btn {
+  display: inline-flex; align-items: center; gap: 7px; font: 600 11px/1 'JetBrains Mono', monospace;
+  color: var(--text); padding: 7px 12px; background: var(--panel2);
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.kc-btn:hover { border-color: var(--accent); }
+.kc-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
+.kc-icon {
+  width: 32px; height: 31px; border-radius: 8px; background: var(--input);
+  border: 1px solid var(--border); color: var(--accent); display: flex;
+  align-items: center; justify-content: center; cursor: pointer;
+}
+.kc-icon svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    .diagram-nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 18px;
-      background: rgba(10, 15, 30, 0.7);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--glass-border);
-    }
+/* body */
+.kc-body { flex: 1; display: flex; min-height: 0; }
 
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--glass-border);
-      color: #94a3b8;
-      font-size: 0.8rem;
-      font-weight: 500;
-      text-decoration: none;
-      transition: color 0.2s ease, background 0.2s ease;
-      font-family: 'Geist Mono', monospace;
-    }
+.kc-viewport {
+  flex: 1; position: relative; overflow: hidden; background: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px); background-size: 22px 22px;
+  cursor: grab; touch-action: none; user-select: none;
+}
+.kc-viewport.dragging { cursor: grabbing; }
+.kc-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+.kc-content svg { display: block; width: max-content; max-width: none; height: auto; overflow: visible; background: transparent !important; }
+.kc-hint {
+  position: absolute; left: 18px; top: 15px; font: 500 11px/1 'JetBrains Mono', monospace;
+  color: var(--faint); pointer-events: none;
+}
+.kc-toolbar {
+  position: absolute; left: 18px; bottom: 18px; display: flex; gap: 5px; padding: 5px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28);
+}
+.kc-toolbar button {
+  height: 30px; border-radius: 6px; background: var(--panel2); border: 0;
+  font: 600 11px/1 'JetBrains Mono', monospace; color: var(--text2); cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.kc-toolbar button.sq { width: 32px; font-size: 16px; }
+.kc-toolbar button:not(.sq) { padding: 0 12px; }
+.kc-toolbar button:hover { background: var(--accent-soft); color: var(--text); }
+.kc-status {
+  position: absolute; right: 18px; bottom: 18px; font: 500 11px/1 'JetBrains Mono', monospace;
+  color: var(--faint); background: var(--panel); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 12px; pointer-events: none;
+}
 
-    .back-link:hover { color: #e2e8f0; background: rgba(255,255,255,0.08); text-decoration: none; }
+/* panel */
+.kc-panel {
+  width: 272px; flex: none; border-left: 1px solid var(--border); background: var(--bg3);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.kc-panel-head {
+  padding: 14px 14px 10px; font: 600 10px/1 'JetBrains Mono', monospace;
+  letter-spacing: .11em; text-transform: uppercase; color: var(--faint);
+  display: flex; align-items: center; gap: 8px;
+}
+.kc-panel-head b { color: var(--text2); font-weight: 600; }
+.kc-search { padding: 0 12px 11px; border-bottom: 1px solid var(--border2); }
+.kc-search label { display: flex; align-items: center; gap: 8px; padding: 0 11px; height: 32px; background: var(--input); border: 1px solid var(--border); border-radius: 8px; }
+.kc-search svg { width: 12px; height: 12px; fill: none; stroke: var(--faint); stroke-width: 2; flex: none; }
+.kc-search input { flex: 1; background: transparent; border: 0; outline: 0; color: var(--text); font: 400 12px system-ui; }
+.kc-search input::placeholder { color: var(--faint); }
+.kc-node-list { flex: 1; overflow: auto; padding: 6px 8px; min-height: 0; }
+.kc-node {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid transparent; cursor: pointer; transition: background .13s;
+}
+.kc-node:hover { background: var(--accent-soft); }
+.kc-node .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; transition: background .13s; }
+.kc-node .name { font: 500 12px system-ui; flex: 1; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kc-node .ct { font: 500 10px/1 'JetBrains Mono', monospace; color: var(--faint); }
+.kc-node.sel { background: var(--panel2); border-color: var(--accent-soft); }
+.kc-node.sel .dot { background: var(--accent); }
+.kc-node.sel .name { color: var(--text); }
+.kc-empty { padding: 26px 16px; text-align: center; font: 500 12px/1.6 system-ui; color: var(--muted); }
 
-    .back-link svg {
-      width: 13px; height: 13px;
-      stroke: currentColor; fill: none;
-      stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
-      flex-shrink: 0;
-    }
+.kc-mini-wrap { padding: 12px; border-top: 1px solid var(--border2); }
+.kc-mini {
+  position: relative; border: 1px solid var(--border); border-radius: 9px; height: 100px;
+  background: var(--canvas); overflow: hidden;
+}
+.kc-mini svg { position: absolute; inset: 0; width: 100%; height: 100%; padding: 8px; opacity: .55; }
+.kc-mini-rect { position: absolute; border: 1.5px solid var(--accent); border-radius: 3px; background: var(--accent-soft); pointer-events: none; }
+.kc-mini-label { font: 600 9.5px/1 'JetBrains Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-top: 8px; }
 
-    .nav-title {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: #f1f5f9;
-      letter-spacing: -0.01em;
-    }
+/* toast */
+.kc-toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(12px);
+  z-index: 60; display: flex; align-items: center; gap: 9px; padding: 11px 17px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 11px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.4); font: 600 12.5px system-ui; color: var(--text);
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.kc-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.kc-toast .d { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
 
-    .nav-sep { color: var(--muted); font-size: 0.75rem; }
+/* interactive highlighting — calm monochrome */
+.interactive-node { cursor: pointer; transition: opacity .16s ease; }
+.interactive-edge { transition: opacity .16s ease; }
+.interactive-node.is-dimmed, .interactive-edge.is-dimmed { opacity: .24; }
+.interactive-node.is-active, .interactive-node.is-connected, .interactive-edge.is-connected { opacity: 1; }
+.interactive-node.is-active rect, .interactive-node.is-active ellipse, .interactive-node.is-active circle,
+.interactive-node.is-active polygon, .interactive-node.is-active path {
+  stroke: var(--accent) !important; stroke-width: 2.1px !important;
+}
+.interactive-node.is-connected rect, .interactive-node.is-connected ellipse, .interactive-node.is-connected circle,
+.interactive-node.is-connected polygon, .interactive-node.is-connected path {
+  stroke: var(--accent) !important; stroke-width: 1.6px !important;
+}
+.interactive-edge.is-connected path, .interactive-edge.is-connected line, .interactive-edge.is-connected polyline {
+  stroke: var(--accent) !important; stroke-width: 2px !important; stroke-linecap: round;
+}
+.interactive-edge.is-connected polygon { stroke: var(--accent) !important; fill: var(--accent) !important; }
+.interactive-edge.is-connected text, .interactive-edge.is-connected tspan {
+  fill: var(--accent) !important; stroke: none !important; font-weight: 700 !important;
+}
+.interactive-edge.edge-flow-forward path, .interactive-edge.edge-flow-forward line, .interactive-edge.edge-flow-forward polyline {
+  stroke-dasharray: 10 7; animation: kc-flow-f 900ms linear infinite;
+}
+.interactive-edge.edge-flow-reverse path, .interactive-edge.edge-flow-reverse line, .interactive-edge.edge-flow-reverse polyline {
+  stroke-dasharray: 10 7; animation: kc-flow-r 900ms linear infinite;
+}
+.interactive-edge.edge-neutral path, .interactive-edge.edge-neutral line, .interactive-edge.edge-neutral polyline {
+  stroke-dasharray: 8 7; animation: kc-flow-n 1200ms ease-in-out infinite;
+}
+@keyframes kc-flow-f { to { stroke-dashoffset: -17; } }
+@keyframes kc-flow-r { to { stroke-dashoffset: 17; } }
+@keyframes kc-flow-n { 0% { stroke-dashoffset: 0; } 50% { stroke-dashoffset: 9; } 100% { stroke-dashoffset: 18; } }
 
-    .shell {
-      width: 100%;
-      padding: 10px;
-      padding-top: 62px;
-    }
-
-    .stage {
-      position: relative;
-      overflow: hidden;
-      padding: 10px;
-      min-height: calc(100vh - 72px);
-      border-radius: 18px;
-      border: 1px solid var(--glass-border);
-      background: rgba(20, 28, 48, 0.3);
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        0 20px 40px rgba(0, 0, 0, 0.4);
-    }
-
-    .stage:focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    .canvas-toolbar {
-      position: absolute;
-      top: 18px;
-      right: 18px;
-      z-index: 5;
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      padding: 6px;
-      border-radius: 12px;
-      background: rgba(10, 15, 30, 0.75);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .canvas-toolbar button {
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.05);
-      color: #94a3b8;
-      border-radius: 8px;
-      min-width: 38px;
-      height: 34px;
-      padding: 0 10px;
-      font-family: 'Geist Mono', monospace;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
-    }
-
-    .canvas-toolbar button:hover {
-      background: rgba(99, 102, 241, 0.15);
-      border-color: rgba(99, 102, 241, 0.3);
-      color: #c7d2fe;
-      transform: translateY(-1px);
-    }
-
-    .canvas-toolbar button:active { transform: translateY(0); }
-
-    .canvas-toolbar button:focus-visible {
-      outline: 2px solid var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    .canvas-viewport {
-      position: relative;
-      height: calc(100vh - 92px);
-      min-height: 0;
-      overflow: hidden;
-      border-radius: 12px;
-      background:
-        radial-gradient(circle at top left, rgba(99, 102, 241, 0.06), transparent 30%),
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 28px),
-        repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 28px),
-        var(--base-950);
-      cursor: default;
-      touch-action: none;
-      user-select: none;
-    }
-
-    .canvas-viewport.is-pan-mode { cursor: grab; }
-    .canvas-viewport.is-dragging { cursor: grabbing; }
-
-    .canvas-content {
-      position: absolute;
-      top: 0;
-      left: 0;
-      transform-origin: 0 0;
-      will-change: transform;
-      overflow: visible;
-    }
-
-    .canvas-content svg {
-      display: block;
-      width: max-content;
-      max-width: none;
-      height: auto;
-      overflow: visible;
-      background: transparent !important;
-      filter: invert(1) hue-rotate(180deg);
-    }
-
-    .canvas-status {
-      position: absolute;
-      left: 18px;
-      bottom: 18px;
-      z-index: 4;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(10, 15, 30, 0.75);
-      border: 1px solid var(--glass-border);
-      color: var(--muted);
-      font-family: 'Geist Mono', monospace;
-      font-size: 0.78rem;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-      pointer-events: none;
-    }
-
-    .interactive-node {
-      cursor: pointer;
-      transition: opacity 160ms ease, filter 160ms ease, transform 160ms ease;
-      transform-origin: center center;
-    }
-
-    .interactive-edge {
-      transition: opacity 160ms ease, filter 160ms ease;
-    }
-
-    .interactive-node.is-dimmed,
-    .interactive-edge.is-dimmed {
-      opacity: var(--dim-opacity);
-    }
-
-    .interactive-node.is-active,
-    .interactive-node.is-connected,
-    .interactive-edge.is-connected {
-      opacity: 1;
-    }
-
-    .interactive-node.is-active {
-      filter: var(--node-shadow);
-    }
-
-    .interactive-node.is-active rect,
-    .interactive-node.is-active ellipse,
-    .interactive-node.is-active circle,
-    .interactive-node.is-active polygon,
-    .interactive-node.is-active path {
-      stroke-width: 2.2px !important;
-      animation: rainbow-stroke 3.4s linear infinite;
-    }
-
-    .interactive-node.is-connected rect,
-    .interactive-node.is-connected ellipse,
-    .interactive-node.is-connected circle,
-    .interactive-node.is-connected polygon,
-    .interactive-node.is-connected path {
-      stroke-width: 1.7px !important;
-      animation: rainbow-stroke 3.4s linear infinite;
-    }
-
-    .interactive-edge.is-connected path,
-    .interactive-edge.is-connected line,
-    .interactive-edge.is-connected polyline {
-      stroke-width: 2.2px !important;
-      stroke-linecap: round;
-      filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.4));
-    }
-
-    .interactive-edge.is-connected polygon {
-      animation: rainbow-fill 3.4s linear infinite;
-    }
-
-    .interactive-edge.is-connected text,
-    .interactive-edge.is-connected tspan {
-      fill: var(--label-highlight) !important;
-      stroke: none !important;
-      font-weight: 700 !important;
-      animation: none !important;
-      filter: none !important;
-    }
-
-    .interactive-edge.is-connected foreignObject,
-    .interactive-edge.is-connected foreignObject * {
-      color: var(--label-highlight) !important;
-      font-weight: 700 !important;
-      animation: none !important;
-      filter: none !important;
-      text-shadow: none !important;
-    }
-
-    .interactive-edge.edge-flow-forward path,
-    .interactive-edge.edge-flow-forward line,
-    .interactive-edge.edge-flow-forward polyline {
-      stroke-dasharray: 11 7;
-      animation: rainbow-stroke 3.4s linear infinite, flow-forward 850ms linear infinite;
-    }
-
-    .interactive-edge.edge-flow-reverse path,
-    .interactive-edge.edge-flow-reverse line,
-    .interactive-edge.edge-flow-reverse polyline {
-      stroke-dasharray: 11 7;
-      animation: rainbow-stroke 3.4s linear infinite, flow-reverse 850ms linear infinite;
-    }
-
-    .interactive-edge.edge-neutral path,
-    .interactive-edge.edge-neutral line,
-    .interactive-edge.edge-neutral polyline {
-      stroke-dasharray: 9 7;
-      animation: rainbow-stroke 3.4s linear infinite, flow-neutral 1150ms ease-in-out infinite;
-    }
-
-    @keyframes rainbow-stroke {
-      0%   { stroke: #ff3b30; }
-      20%  { stroke: #ff9500; }
-      40%  { stroke: #34c759; }
-      60%  { stroke: #0a84ff; }
-      80%  { stroke: #5e5ce6; }
-      100% { stroke: #ff2d55; }
-    }
-
-    @keyframes rainbow-fill {
-      0%   { fill: #ff3b30; stroke: #ff3b30; }
-      20%  { fill: #ff9500; stroke: #ff9500; }
-      40%  { fill: #34c759; stroke: #34c759; }
-      60%  { fill: #0a84ff; stroke: #0a84ff; }
-      80%  { fill: #5e5ce6; stroke: #5e5ce6; }
-      100% { fill: #ff2d55; stroke: #ff2d55; }
-    }
-
-    @keyframes flow-forward  { to { stroke-dashoffset: -18; } }
-    @keyframes flow-reverse  { to { stroke-dashoffset:  18; } }
-
-    @keyframes flow-neutral {
-      0%   { stroke-dashoffset: 0;  filter: brightness(1);   }
-      50%  { stroke-dashoffset: 10; filter: brightness(1.3); }
-      100% { stroke-dashoffset: 20; filter: brightness(1);   }
-    }
-
-    @media (max-width: 720px) {
-      .shell { padding: 6px; padding-top: 58px; }
-      .canvas-toolbar { top: 10px; right: 10px; gap: 4px; padding: 5px; }
-      .canvas-toolbar button { min-width: 34px; height: 32px; padding: 0 8px; }
-      .canvas-viewport { height: calc(100vh - 74px); }
-      .canvas-status { left: 10px; bottom: 10px; }
-    }
-  </style>
+@media (max-width: 760px) {
+  .kc-panel { display: none; }
+}
+</style>
 </head>
 <body>
-  <nav class="diagram-nav">
-    <a class="back-link" href="../index.html">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      Gallery
-    </a>
-    <span class="nav-sep">/</span>
-    <span class="nav-title">Trading Platform Container</span>
-    <span style="margin-left:auto;padding:3px 9px;border-radius:999px;font-family:'Geist Mono',monospace;font-size:0.7rem;font-weight:600;background:#6366f122;border:1px solid #6366f144;color:#6366f1;">c4plantuml</span>
-  </nav>
-  <main class="shell">
-    <section class="stage" id="diagram-stage" tabindex="0" aria-label="Interactive diagram canvas">
-      <div class="canvas-toolbar" aria-label="Canvas controls">
-        <button type="button" id="zoom-out" aria-label="Zoom out">-</button>
-        <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
-        <button type="button" id="fit-view" aria-label="Fit to screen">Fit</button>
-        <button type="button" id="actual-size" aria-label="Reset to one hundred percent">100%</button>
+  <div id="app" data-theme="dark">
+    <nav class="kc-nav">
+      <a class="kc-back" href="../index.html"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Gallery</a>
+      <span class="kc-sep">/</span>
+      <span class="kc-title">Trading Platform Container</span>
+      <span class="kc-pill" style="background:rgba(99, 102, 241,.13);border:1px solid rgba(99, 102, 241,.32);color:#6366f1"><span class="d" style="background:#6366f1"></span>c4plantuml</span>
+      <div class="kc-nav-right">
+        <button class="kc-btn" id="copy-url" type="button"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy Kroki URL</button>
+        <button class="kc-icon" id="theme-toggle" type="button" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button>
       </div>
-      <div class="canvas-viewport" id="diagram-viewport">
-        <div class="canvas-content" id="diagram-content">
-          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="DESCRIPTION" height="891px" preserveAspectRatio="none" style="width:2100px;height:891px;" version="1.1" viewBox="0 0 2100 891" width="2100px" zoomAndPan="magnify" data-interactive-engine="c4plantuml" data-interactive-tier="full"><defs /><g><g class="cluster" data-qualified-name="platform" data-source-line="1291" id="ent0004"><rect fill="#FAFAFA" height="428" rx="2.5" ry="2.5" style="stroke:#B8B8B8;stroke-width:1;stroke-dasharray:7,7;" width="1788.82" x="305.58" y="7" /><text fill="#1A1A2E" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="272.0703" x="1063.9548" y="23.8516">Autonomous Trading Platform</text><text fill="#1A1A2E" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="60.9551" x="1169.5125" y="38.7637">[System]</text></g><g class="entity interactive-node" data-qualified-name="platform.web" data-source-line="2010" id="ent0005" data-node-id="ent0005"><rect fill="#438DD5" height="117.7813" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="208.3643" x="321.58" y="301.11" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="59.7969" x="357.5903" y="325.9616">Trader</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="417.3871" y="325.9616"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="70.9766" x="422.9574" y="325.9616">Console</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="50.9297" x="400.2973" y="340.8737">[Next.js]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="423.537" y="356.6989"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.7773" x="353.2465" y="372.9957">Prompt</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="404.0238" y="372.9957"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="89.8037" x="408.474" y="372.9957">composition,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="59.2676" x="331.58" y="389.2926">scenario</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="390.8476" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="51.0576" x="395.2978" y="389.2926">review,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="446.3554" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="69.1387" x="450.8056" y="389.2926">drill-down</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.4648" x="408.0297" y="405.5895">state</text></g><g class="entity interactive-node" data-qualified-name="platform.api" data-source-line="2010" id="ent0006" data-node-id="ent0006"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="214.6396" x="623.94" y="309.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="124.5938" x="651.1465" y="334.1016">Orchestration</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="775.7403" y="334.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="30.0625" x="781.3106" y="334.1016">API</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="53.5605" x="704.4796" y="349.0137">[FastAPI]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="729.0347" y="364.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="37.2627" x="633.94" y="381.1357">Auth,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="671.2027" y="381.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53.5254" x="675.6529" y="381.1357">request</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="729.1783" y="381.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="54.7832" x="733.6285" y="381.1357">routing,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="788.4117" y="381.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.7178" x="792.8619" y="381.1357">audit</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56.3281" x="655.733" y="397.4326">logging,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="712.0611" y="397.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.4648" x="716.5113" y="397.4326">state</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="751.9761" y="397.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.3604" x="756.4263" y="397.4326">fan-out</text></g><g class="entity interactive-node" data-qualified-name="platform.worker" data-source-line="2010" id="ent0007" data-node-id="ent0007"><rect fill="#438DD5" height="117.7813" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="194.2002" x="1049.58" y="301.11" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="88.4922" x="1061.9301" y="325.9616">Execution</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1150.4223" y="325.9616"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="75.4375" x="1155.9926" y="325.9616">Workers</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="38.959" x="1096.8959" y="340.8737">[Cloud</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1135.8549" y="340.8737"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="23.5488" x="1139.6694" y="340.8737">Run</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1163.2182" y="340.8737"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="29.4316" x="1167.0326" y="340.8737">Jobs]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1144.455" y="356.6989"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.7773" x="1059.58" y="372.9957">Prompt</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1110.3573" y="372.9957"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70.9297" x="1114.8075" y="372.9957">assembly,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1185.7372" y="372.9957"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.5928" x="1190.1874" y="372.9957">model</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.7998" x="1066.5492" y="389.2926">calls,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1102.349" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="45.6846" x="1106.7992" y="389.2926">broker</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1152.4838" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="69.877" x="1156.934" y="389.2926">command</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="76.1387" x="1108.6108" y="405.5895">generation</text></g><g class="entity interactive-node" data-qualified-name="platform.risk" data-source-line="2010" id="ent0008" data-node-id="ent0008"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="192.8398" x="1462.73" y="95.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="37.9688" x="1506.6304" y="120.1016">Risk</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1544.5991" y="120.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="61.5" x="1550.1695" y="120.1016">Engine</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="46.2773" x="1509.5884" y="135.0137">[Python</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1555.8657" y="135.0137"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="49.0313" x="1559.6802" y="135.0137">Service]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1556.9248" y="150.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="65.1191" x="1475.167" y="167.1357">Exposure</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1540.2862" y="167.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="52.7324" x="1544.7363" y="167.1357">checks,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1597.4688" y="167.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="41.2139" x="1601.919" y="167.1357">policy</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="78.0869" x="1472.73" y="183.4326">evaluation,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1550.8169" y="183.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="37.5771" x="1555.2671" y="183.4326">order</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1592.8443" y="183.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="48.2754" x="1597.2945" y="183.4326">guards</text></g><g class="entity interactive-node" data-qualified-name="platform.cache" data-source-line="2010" id="ent0009" data-node-id="ent0009"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="191.2197" x="1051.07" y="164.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="86.9063" x="1073.3088" y="189.1016">Response</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1160.215" y="189.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="54.2656" x="1165.7853" y="189.1016">Cache</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="42.2871" x="1125.5363" y="204.0137">[Redis]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1144.4548" y="219.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="41.8154" x="1061.07" y="236.1357">Warm</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1102.8854" y="236.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.5654" x="1107.3356" y="236.1357">answer</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1157.9011" y="236.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="39.1494" x="1162.3513" y="236.1357">reuse</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1201.5007" y="236.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1205.9509" y="236.1357">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74.5938" x="1063.3429" y="252.4326">short-lived</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1137.9367" y="252.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="87.6299" x="1142.3869" y="252.4326">coordination</text></g><g class="entity interactive-node" data-qualified-name="platform.db" data-source-line="2014" id="ent0010" data-node-id="ent0010"><path d="M1868.53,100.75 C1868.53,90.75 1973.4675,90.75 1973.4675,90.75 C1973.4675,90.75 2078.405,90.75 2078.405,100.75 L2078.405,191.2344 C2078.405,201.2344 1973.4675,201.2344 1973.4675,201.2344 C1973.4675,201.2344 1868.53,201.2344 1868.53,191.2344 L1868.53,100.75" fill="#438DD5" style="stroke:#3C7FC0;stroke-width:0.5;" /><path d="M1868.53,100.75 C1868.53,110.75 1973.4675,110.75 1973.4675,110.75 C1973.4675,110.75 2078.405,110.75 2078.405,100.75" fill="none" style="stroke:#3C7FC0;stroke-width:0.5;" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="69.3828" x="1911.5378" y="129.6016">Trading</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1980.9206" y="129.6016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="48.9063" x="1986.4909" y="129.6016">Store</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="61.084" x="1942.9255" y="144.5137">[Postgres]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1971.2424" y="160.3389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.6543" x="1878.53" y="176.6357">Users,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1922.1843" y="176.6357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62.9658" x="1926.6345" y="176.6357">prompts,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1989.6003" y="176.6357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74.3545" x="1994.0505" y="176.6357">strategies,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="49.3213" x="1924.8674" y="192.9326">orders,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1974.1887" y="192.9326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.4287" x="1978.6389" y="192.9326">traces</text></g><g class="entity interactive-node" data-qualified-name="platform.obs" data-source-line="2010" id="ent0011" data-node-id="ent0011"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="206.5391" x="1455.89" y="317.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="120.5313" x="1477.9916" y="342.1016">Observability</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1598.5228" y="342.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="36.2344" x="1604.0931" y="342.1016">Hub</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="97.9746" x="1465.89" y="357.0137">[OpenTelemetry</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1563.8646" y="357.0137"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="10.0547" x="1567.6791" y="357.0137">+</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1577.7338" y="357.0137"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="70.8809" x="1581.5482" y="357.0137">ClickHouse]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1556.9344" y="372.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="59.7871" x="1475.2655" y="389.1357">Latency,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1535.0526" y="389.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="51.2217" x="1539.5028" y="389.1357">prompt</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1590.7245" y="389.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="47.8789" x="1595.1747" y="389.1357">traces,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="44.0098" x="1495.2572" y="405.4326">replay</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1539.267" y="405.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="79.3447" x="1543.7171" y="405.4326">diagnostics</text></g><g class="entity interactive-node" data-qualified-name="trader" data-source-line="1881" id="ent0002" data-node-id="ent0002"><rect fill="#08427B" height="139.2079" rx="2.5" ry="2.5" style="stroke:#073B6F;stroke-width:0.5;" width="218.5771" x="7" y="290.39" /><image height="52" width="52" x="90.4424" xlink:href="data:image/png;base64,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" y="300.39" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="54.8281" x="56.1909" y="366.9339">Quant</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="111.019" y="366.9339"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="59.7969" x="116.5894" y="366.9339">Trader</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="114.0635" y="383.7024"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="34.7676" x="17" y="399.9993">Runs</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="51.7676" y="399.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62.9658" x="56.2178" y="399.9993">prompts,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="119.1836" y="399.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57.9961" x="123.6338" y="399.9993">watches</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="181.6299" y="399.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="29.4971" x="186.0801" y="399.9993">risk,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="31.7861" y="416.2962">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="58.125" y="416.2962"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="64.8662" x="62.5752" y="416.2962">approves</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="127.4414" y="416.2962"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68.8994" x="131.8916" y="416.2962">execution</text></g><g class="entity interactive-node" data-qualified-name="analyst" data-source-line="1881" id="ent0003" data-node-id="ent0003"><rect fill="#08427B" height="139.2079" rx="2.5" ry="2.5" style="stroke:#073B6F;stroke-width:0.5;" width="185.0332" x="1880.95" y="619.39" /><image height="52" width="52" x="1947.6204" xlink:href="data:image/png;base64,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" y="629.39" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="34.5781" x="1919.5643" y="695.9339">Ops</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1954.1424" y="695.9339"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="67.6563" x="1959.7127" y="695.9339">Analyst</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1971.2415" y="712.7024"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57.873" x="1890.95" y="728.9993">Reviews</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1948.823" y="728.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="71.9209" x="1953.2732" y="728.9993">anomalies</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2025.1941" y="728.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="2029.6443" y="728.9993">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="44.0098" x="1927.5223" y="745.2962">replay</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1971.532" y="745.2962"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.4287" x="1975.9822" y="745.2962">traces</text></g><g class="entity interactive-node" data-qualified-name="vertex" data-source-line="1915" id="ent0012" data-node-id="ent0012"><rect fill="#8E8E93" height="87.5156" rx="2.5" ry="2.5" style="stroke:#7D7D82;stroke-width:0.5;" width="199.7783" x="1459.27" y="454.24" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="59.9453" x="1517.2334" y="479.0916">Vertex</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1577.1787" y="479.0916"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="18.3359" x="1582.749" y="479.0916">AI</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1556.9341" y="495.8601"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="73.3018" x="1469.27" y="512.157">Reasoning</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1542.5718" y="512.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1547.022" y="512.157">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1573.3608" y="512.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="71.2373" x="1577.811" y="512.157">extraction</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.8867" x="1533.7158" y="528.4539">models</text></g><g class="entity interactive-node" data-qualified-name="exchange" data-source-line="1915" id="ent0013" data-node-id="ent0013"><rect fill="#8E8E93" height="87.5156" rx="2.5" ry="2.5" style="stroke:#7D7D82;stroke-width:0.5;" width="208.7471" x="1454.78" y="577.24" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="86.6172" x="1493.2668" y="602.0916">Exchange</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1579.884" y="602.0916"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="39.5859" x="1585.4543" y="602.0916">APIs</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1556.9284" y="618.8601"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="48.624" x="1464.78" y="635.157">Market</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1513.404" y="635.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="31.5342" x="1517.8542" y="635.157">data</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1549.3884" y="635.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1553.8386" y="635.157">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1580.1775" y="635.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68.8994" x="1584.6277" y="635.157">execution</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.5518" x="1533.8777" y="651.4539">venues</text></g><g class="entity interactive-node" data-qualified-name="notify" data-source-line="1915" id="ent0014" data-node-id="ent0014"><rect fill="#8E8E93" height="71.2188" rx="2.5" ry="2.5" style="stroke:#7D7D82;stroke-width:0.5;" width="187.3672" x="1053" y="454.39" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="105.7578" x="1063" y="479.2416">Notification</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="5.5703" x="1168.7578" y="479.2416"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacing" textLength="56.0391" x="1174.3281" y="479.2416">Fabric</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1144.4585" y="496.0101"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="37.1602" x="1075.3062" y="512.307">Slack</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1112.4663" y="512.307"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1116.9165" y="512.307">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1143.2554" y="512.307"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70.3555" x="1147.7056" y="512.307">webhooks</text></g><g class="interactive-edge link" data-entity-1="ent0002" data-entity-2="ent0005" data-link-type="dependency" data-source-line="1404" id="lnk15" data-edge-source="ent0002" data-edge-target="ent0005" data-edge-kind="directed"><path d="M225.69,360 C256.73,360 282.47,360 313.2,360" fill="none" id="trader-to-web" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="321.2,360,313.2,357,313.2,363,321.2,360" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="32.168" x="256.58" y="357.1387">Uses</text></g><g class="interactive-edge link" data-entity-1="ent0003" data-entity-2="ent0005" data-link-type="dependency" data-source-line="1404" id="lnk16" data-edge-source="ent0003" data-edge-target="ent0005" data-edge-kind="directed"><path d="M1880.48,699.18 C1797.01,707.54 1670.48,718 1560.15,718 C730.26,718 730.26,718 730.26,718 C575.45,718 486.0013,528.302 448.7613,426.622" fill="none" id="analyst-to-web" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="446.01,419.11,445.9442,427.6538,451.5783,425.5903,446.01,419.11" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="55.6816" x="1077.68" y="715.1387">Reviews</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1133.3616" y="715.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="62.0332" x="1137.5394" y="715.1387">incidents</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1199.5726" y="715.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="12.6563" x="1203.7503" y="715.1387">in</text></g><g class="interactive-edge link" data-entity-1="ent0005" data-entity-2="ent0006" data-link-type="dependency" data-source-line="1404" id="lnk17" data-edge-source="ent0005" data-edge-target="ent0006" data-edge-kind="directed"><path d="M530.36,360 C560.41,360 585.27,360 615.51,360" fill="none" id="web-to-api" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="623.51,360,615.51,357,615.51,363,623.51,360" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="32.2734" x="560.94" y="357.1387">Calls</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0009" data-link-type="dependency" data-source-line="1404" id="lnk18" data-edge-source="ent0006" data-edge-target="ent0009" data-edge-kind="directed"><path d="M839,322.56 C904.43,299.61 979.9211,273.1386 1043.0811,250.9786" fill="none" id="api-to-cache" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1050.63,248.33,1042.0879,248.1477,1044.0744,253.8094,1050.63,248.33" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="47.7246" x="869.58" y="245.1387">Checks</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="917.3046" y="245.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="37.6055" x="921.4823" y="245.1387">warm</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="959.0878" y="245.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="56.0684" x="963.2655" y="245.1387">answers</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="12.6563" x="938.1288" y="259.1074">in</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0010" data-link-type="dependency" data-source-line="1404" id="lnk19" data-edge-source="ent0006" data-edge-target="ent0010" data-edge-kind="directed"><path d="M775.11,309.08 C800.23,281.55 833.79,248.47 868.58,225 C941.19,175.99 965.59,171.86 1049.58,147 C1312.87,69.06 1390.55,48.31 1663.53,78 C1732.59,85.51 1801.0818,100.2481 1860.5418,115.2081" fill="none" id="api-to-db" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1868.3,117.16,1861.2738,112.2987,1859.8098,118.1174,1868.3,117.16" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="41.209" x="1291.28" y="64.1387">Reads</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1332.489" y="64.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="25.2305" x="1336.6667" y="64.1387">and</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1361.8972" y="64.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="42.1348" x="1366.0749" y="64.1387">writes</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0007" data-link-type="dependency" data-source-line="1404" id="lnk20" data-edge-source="ent0006" data-edge-target="ent0007" data-edge-kind="directed"><path d="M839,360 C903.95,360 978.26,360 1041.24,360" fill="none" id="api-to-worker" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1049.24,360,1041.24,357,1041.24,363,1049.24,360" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="74.5781" x="885.58" y="343.1387">Dispatches</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="960.1581" y="343.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="38.7188" x="964.3359" y="343.1387">async</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="36.4863" x="916.995" y="357.1074">plans</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="953.4814" y="357.1074"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="13.9805" x="957.6591" y="357.1074">to</text></g><g class="interactive-edge link" data-entity-1="ent0007" data-entity-2="ent0008" data-link-type="dependency" data-source-line="1404" id="lnk21" data-edge-source="ent0007" data-edge-target="ent0008" data-edge-kind="directed"><path d="M1226.12,300.61 C1232.32,294.89 1238.29,288.99 1243.78,283 C1260.02,265.27 1254.61,252.5 1273.78,238 C1328.81,196.35 1395.5986,174.8212 1454.5886,162.1412" fill="none" id="worker-to-risk" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1462.41,160.46,1453.9582,159.2082,1455.2191,165.0742,1462.41,160.46" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="63.3164" x="1282.28" y="154.1387">Validates</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1345.5964" y="154.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="67.0195" x="1349.7741" y="154.1387">candidate</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="48.9902" x="1308.2136" y="168.1074">actions</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1357.2038" y="168.1074"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="29.4785" x="1361.3816" y="168.1074">with</text></g><g class="interactive-edge link" data-entity-1="ent0007" data-entity-2="ent0012" data-link-type="dependency" data-source-line="1404" id="lnk22" data-edge-source="ent0007" data-edge-target="ent0012" data-edge-kind="directed"><path d="M1244.05,392.93 C1254.09,396.34 1264.14,399.74 1273.78,403 C1335.31,423.76 1396.81,444.3218 1451.48,462.5318" fill="none" id="worker-to-vertex" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1459.07,465.06,1452.428,459.6856,1450.5319,465.3781,1459.07,465.06" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="62.6719" x="1274.78" y="386.1387">Requests</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1337.4519" y="386.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="82.4824" x="1341.6296" y="386.1387">completions</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="31.8867" x="1333.5027" y="400.1074">from</text></g><g class="interactive-edge link" data-entity-1="ent0007" data-entity-2="ent0013" data-link-type="dependency" data-source-line="1404" id="lnk23" data-edge-source="ent0007" data-edge-target="ent0013" data-edge-kind="directed"><path d="M1226.6,418.95 C1232.7,424.76 1238.52,430.81 1243.78,437 C1261.33,457.61 1253.86,471.67 1273.78,490 C1324.99,537.1 1388.5523,567.1419 1446.8423,588.1119" fill="none" id="worker-to-exchange" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1454.37,590.82,1447.8578,585.289,1445.8268,590.9348,1454.37,590.82" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="53.0098" x="1285.78" y="473.1387">Fetches</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1338.7898" y="473.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="41.0156" x="1342.9675" y="473.1387">prices</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1383.9831" y="473.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="25.2305" x="1388.1609" y="473.1387">and</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="53.7715" x="1289.5564" y="487.1074">submits</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1343.3279" y="487.1074"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="43.9512" x="1347.5056" y="487.1074">orders</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1391.4568" y="487.1074"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="13.9805" x="1395.6345" y="487.1074">to</text></g><g class="interactive-edge link" data-entity-1="ent0007" data-entity-2="ent0010" data-link-type="dependency" data-source-line="1404" id="lnk24" data-edge-source="ent0007" data-edge-target="ent0010" data-edge-kind="directed"><path d="M1243.81,336.01 C1347.49,310.03 1517.36,267.19 1663.53,229 C1731.77,211.17 1800.608,192.6905 1860.448,176.4905" fill="none" id="worker-to-db" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1868.17,174.4,1859.664,173.5948,1861.2319,179.3863,1868.17,174.4" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="54.1289" x="1493.15" y="226.1387">Persists</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1547.2789" y="226.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="57.1758" x="1551.4566" y="226.1387">artifacts</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1608.6324" y="226.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="12.6563" x="1612.8102" y="226.1387">in</text></g><g class="interactive-edge link" data-entity-1="ent0007" data-entity-2="ent0011" data-link-type="dependency" data-source-line="1404" id="lnk25" data-edge-source="ent0007" data-edge-target="ent0011" data-edge-kind="directed"><path d="M1244.18,361.88 C1307.69,363.11 1382.7415,364.5743 1447.4715,365.8343" fill="none" id="worker-to-obs" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1455.47,365.99,1447.5299,362.8349,1447.4131,368.8337,1455.47,365.99" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="65.1211" x="1284.78" y="360.1387">Publishes</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1349.9011" y="360.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="42.1465" x="1354.0788" y="360.1387">traces</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1396.2253" y="360.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="13.9805" x="1400.403" y="360.1387">to</text></g><g class="interactive-edge link" data-entity-1="ent0008" data-entity-2="ent0010" data-link-type="dependency" data-source-line="1404" id="lnk26" data-edge-source="ent0008" data-edge-target="ent0010" data-edge-kind="directed"><path d="M1656.04,146 C1719.57,146 1794.89,146 1860.08,146" fill="none" id="risk-to-db" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1868.08,146,1860.08,143,1860.08,149,1868.08,146" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="41.209" x="1694.53" y="143.1387">Reads</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1735.739" y="143.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="61.8691" x="1739.9167" y="143.1387">positions</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1801.7859" y="143.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="31.8867" x="1805.9636" y="143.1387">from</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0014" data-link-type="dependency" data-source-line="1404" id="lnk27" data-edge-source="ent0006" data-edge-target="ent0014" data-edge-kind="directed"><path d="M839,393.56 C905.15,414.36 981.6584,438.4202 1045.0684,458.3602" fill="none" id="api-to-notify" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1052.7,460.76,1045.9684,455.4983,1044.1685,461.222,1052.7,460.76" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="65.1211" x="871.58" y="389.1387">Publishes</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="936.7011" y="389.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="76.4004" x="940.8788" y="389.1387">user-facing</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="54.8379" x="907.9316" y="403.1074">updates</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="962.7695" y="403.1074"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="13.9805" x="966.9472" y="403.1074">to</text></g><g class="interactive-edge link" data-entity-1="ent0011" data-entity-2="ent0003" data-link-type="dependency" data-source-line="1404" id="lnk28" data-edge-source="ent0011" data-edge-target="ent0003" data-edge-kind="directed"><path d="M1638.6,419.2 C1647.09,425.09 1655.55,431.1 1663.53,437 C1742.99,495.72 1823.7798,562.1461 1885.1198,613.9861" fill="none" id="obs-to-analyst" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1891.23,619.15,1887.0563,611.6948,1883.1834,616.2774,1891.23,619.15" style="stroke:#666666;stroke-width:1;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="61.4063" x="1700.53" y="459.1387">Supports</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1761.9363" y="459.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="42.6797" x="1766.114" y="459.1387">replay</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="4.1777" x="1808.7937" y="459.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing" textLength="19.3828" x="1812.9714" y="459.1387">for</text></g><g class="legend" data-source-line="1216"><rect fill="none" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1873.3502" y="782.5979" /><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="57.9209" x="1873.3502" y="795.593">Legend</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1931.2711" y="795.593"> </text><rect fill="#08427B" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1873.3502" y="798.8948" /><text fill="#073B6F" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1877.8004" y="811.8899">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1885.5045" y="811.8899"> </text><image height="13" width="13" x="1889.9547" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAAyUlEQVR4XmPgcKpmQMeywW0hfhULovk96hXQ5UAYQ+DTt5//kUHX0gPv0NWgcAwSJmSj6IACvJqaF+ytR9cAAirhXeY4NenF96egawABvDaB8PM3n1A01Mzeid9PMCzp1+ziWTw3mse1lh9dDkWTVECL+xdoyB26cP9/w9zd9568+gDm33v69j+3Sy0PiiaQichOwgVQNF2++xxdHivwKpm3Ba4JXRIXmLbu2Am4pqv3XqLLYwVB1YtWogQEn3udED7M61YnCFMLAFS9bYWccBSaAAAAAElFTkSuQmCC" y="802.2686" /><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="47.9883" x="1911.7782" y="811.8899">person</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1964.2166" y="811.8899"> </text><rect fill="#438DD5" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1873.3502" y="815.1917" /><text fill="#3C7FC0" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1877.8004" y="828.1868">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1885.5045" y="828.1868"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="66.3359" x="1894.4049" y="828.1868">container</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1965.191" y="828.1868"> </text><rect fill="#8E8E93" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1873.3502" y="831.4886" /><text fill="#7D7D82" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1877.8004" y="844.4837">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1885.5045" y="844.4837"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.7119" x="1894.4049" y="844.4837">external_system</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2014.567" y="844.4837"> </text><rect fill="#FAFAFA" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1873.3502" y="847.7854" /><text fill="#B8B8B8" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1877.8004" y="860.7805">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1885.5045" y="860.7805"> </text><text fill="#1A1A2E" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="121.7686" x="1894.4049" y="860.7805">system boundary</text><text fill="#1A1A2E" font-family="sans-serif" font-size="10" lengthAdjust="spacing" textLength="44.3262" x="2020.6236" y="861.7239">(dashed)</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2064.9498" y="860.7805"> </text><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="2069.4" y1="782.5979" y2="782.5979" /><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="2069.4" y1="798.8948" y2="798.8948" /><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="2069.4" y1="815.1917" y2="815.1917" /><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="2069.4" y1="831.4886" y2="831.4886" /><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="2069.4" y1="847.7854" y2="847.7854" /><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="2069.4" y1="864.0823" y2="864.0823" /><line style="stroke:none;stroke-width:1;" x1="1873.3502" x2="1873.3502" y1="782.5979" y2="864.0823" /><line style="stroke:none;stroke-width:1;" x1="2069.4" x2="2069.4" y1="782.5979" y2="864.0823" /></g></g></svg>
+    </nav>
+    <div class="kc-body">
+      <div class="kc-viewport" id="viewport" tabindex="0">
+        <div class="kc-content" id="content"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="DESCRIPTION" height="893px" preserveAspectRatio="none" style="width:2173px;height:893px;" version="1.1" viewBox="0 0 2173 893" width="2173px" zoomAndPan="magnify" data-interactive-engine="c4plantuml" data-interactive-tier="full"><defs /><g><g class="cluster" data-qualified-name="platform" data-source-line="1291" id="ent0003"><rect fill="#FAFAFA" height="428" rx="2.5" ry="2.5" style="stroke:#B8B8B8;stroke-width:1;stroke-dasharray:7,7;" width="1853.82" x="305.58" y="7" /><text fill="#1A1A2E" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="272.0703" x="1096.4548" y="23.8516">Autonomous Trading Platform</text><text fill="#1A1A2E" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="60.9551" x="1202.0125" y="38.7637">[System]</text></g><g class="entity interactive-node" data-qualified-name="platform.web" data-source-line="2010" id="ent0004" data-node-id="ent0004" data-node-label="Trader Console"><rect fill="#438DD5" height="117.7813" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="208.3643" x="321.58" y="301.11" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="59.7969" x="357.5903" y="325.9616">Trader</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="417.3871" y="325.9616"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="70.9766" x="422.9574" y="325.9616">Console</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="50.9297" x="400.2973" y="340.8737">[Next.js]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="423.537" y="356.6989"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.7773" x="353.2465" y="372.9957">Prompt</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="404.0238" y="372.9957"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="89.8037" x="408.474" y="372.9957">composition,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="59.2676" x="331.58" y="389.2926">scenario</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="390.8476" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="51.0576" x="395.2978" y="389.2926">review,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="446.3554" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="69.1387" x="450.8056" y="389.2926">drill-down</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.4648" x="408.0297" y="405.5895">state</text></g><g class="entity interactive-node" data-qualified-name="platform.api" data-source-line="2010" id="ent0005" data-node-id="ent0005" data-node-label="Orchestration API"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="214.6396" x="623.94" y="309.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="124.5938" x="651.1465" y="334.1016">Orchestration</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="775.7403" y="334.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="30.0625" x="781.3106" y="334.1016">API</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="53.5605" x="704.4796" y="349.0137">[FastAPI]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="729.0347" y="364.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="37.2627" x="633.94" y="381.1357">Auth,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="671.2027" y="381.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="53.5254" x="675.6529" y="381.1357">request</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="729.1783" y="381.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="54.7832" x="733.6285" y="381.1357">routing,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="788.4117" y="381.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.7178" x="792.8619" y="381.1357">audit</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="56.3281" x="655.733" y="397.4326">logging,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="712.0611" y="397.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.4648" x="716.5113" y="397.4326">state</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="751.9761" y="397.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.3604" x="756.4263" y="397.4326">fan-out</text></g><g class="entity interactive-node" data-qualified-name="platform.worker" data-source-line="2010" id="ent0006" data-node-id="ent0006" data-node-label="Execution Workers"><rect fill="#438DD5" height="117.7813" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="194.2002" x="1076.58" y="301.11" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="88.4922" x="1088.9301" y="325.9616">Execution</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1177.4223" y="325.9616"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="75.4375" x="1182.9926" y="325.9616">Workers</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="38.959" x="1123.8959" y="340.8737">[Cloud</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1162.8549" y="340.8737"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="23.5488" x="1166.6694" y="340.8737">Run</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1190.2182" y="340.8737"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="29.4316" x="1194.0326" y="340.8737">Jobs]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1171.455" y="356.6989"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.7773" x="1086.58" y="372.9957">Prompt</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1137.3573" y="372.9957"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70.9297" x="1141.8075" y="372.9957">assembly,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1212.7372" y="372.9957"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.5928" x="1217.1874" y="372.9957">model</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="35.7998" x="1093.5492" y="389.2926">calls,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1129.349" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="45.6846" x="1133.7992" y="389.2926">broker</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1179.4838" y="389.2926"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="69.877" x="1183.934" y="389.2926">command</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="76.1387" x="1135.6108" y="405.5895">generation</text></g><g class="entity interactive-node" data-qualified-name="platform.risk" data-source-line="2010" id="ent0007" data-node-id="ent0007" data-node-label="Risk Engine"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="192.8398" x="1527.73" y="95.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="37.9688" x="1571.6304" y="120.1016">Risk</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1609.5991" y="120.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="61.5" x="1615.1695" y="120.1016">Engine</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="46.2773" x="1574.5884" y="135.0137">[Python</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1620.8657" y="135.0137"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="49.0313" x="1624.6802" y="135.0137">Service]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1621.9248" y="150.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="65.1191" x="1540.167" y="167.1357">Exposure</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1605.2862" y="167.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="52.7324" x="1609.7363" y="167.1357">checks,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1662.4688" y="167.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="41.2139" x="1666.919" y="167.1357">policy</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="78.0869" x="1537.73" y="183.4326">evaluation,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1615.8169" y="183.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="37.5771" x="1620.2671" y="183.4326">order</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1657.8443" y="183.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="48.2754" x="1662.2945" y="183.4326">guards</text></g><g class="entity interactive-node" data-qualified-name="platform.cache" data-source-line="2010" id="ent0008" data-node-id="ent0008" data-node-label="Response Cache"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="191.2197" x="1078.07" y="164.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="86.9063" x="1100.3088" y="189.1016">Response</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1187.215" y="189.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="54.2656" x="1192.7853" y="189.1016">Cache</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="42.2871" x="1152.5363" y="204.0137">[Redis]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1171.4548" y="219.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="41.8154" x="1088.07" y="236.1357">Warm</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1129.8854" y="236.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.5654" x="1134.3356" y="236.1357">answer</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1184.9011" y="236.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="39.1494" x="1189.3513" y="236.1357">reuse</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1228.5007" y="236.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1232.9509" y="236.1357">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74.5938" x="1090.3429" y="252.4326">short-lived</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1164.9367" y="252.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="87.6299" x="1169.3869" y="252.4326">coordination</text></g><g class="entity interactive-node" data-qualified-name="platform.db" data-source-line="2014" id="ent0009" data-node-id="ent0009" data-node-label="Trading Store"><path d="M1933.53,100.75 C1933.53,90.75 2038.4675,90.75 2038.4675,90.75 C2038.4675,90.75 2143.405,90.75 2143.405,100.75 L2143.405,191.2344 C2143.405,201.2344 2038.4675,201.2344 2038.4675,201.2344 C2038.4675,201.2344 1933.53,201.2344 1933.53,191.2344 L1933.53,100.75" fill="#438DD5" style="stroke:#3C7FC0;stroke-width:0.5;" /><path d="M1933.53,100.75 C1933.53,110.75 2038.4675,110.75 2038.4675,110.75 C2038.4675,110.75 2143.405,110.75 2143.405,100.75" fill="none" style="stroke:#3C7FC0;stroke-width:0.5;" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="69.3828" x="1976.5378" y="129.6016">Trading</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="2045.9206" y="129.6016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="48.9063" x="2051.4909" y="129.6016">Store</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="61.084" x="2007.9255" y="144.5137">[Postgres]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2036.2424" y="160.3389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.6543" x="1943.53" y="176.6357">Users,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1987.1843" y="176.6357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62.9658" x="1991.6345" y="176.6357">prompts,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2054.6003" y="176.6357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="74.3545" x="2059.0505" y="176.6357">strategies,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="49.3213" x="1989.8674" y="192.9326">orders,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2039.1887" y="192.9326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.4287" x="2043.6389" y="192.9326">traces</text></g><g class="entity interactive-node" data-qualified-name="platform.obs" data-source-line="2010" id="ent0010" data-node-id="ent0010" data-node-label="Observability Hub"><rect fill="#438DD5" height="101.4844" rx="2.5" ry="2.5" style="stroke:#3C7FC0;stroke-width:0.5;" width="206.5391" x="1520.89" y="317.25" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="120.5313" x="1542.9916" y="342.1016">Observability</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1663.5228" y="342.1016"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="36.2344" x="1669.0931" y="342.1016">Hub</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="97.9746" x="1530.89" y="357.0137">[OpenTelemetry</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1628.8646" y="357.0137"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="10.0547" x="1632.6791" y="357.0137">+</text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="3.8145" x="1642.7338" y="357.0137"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacing" textLength="70.8809" x="1646.5482" y="357.0137">ClickHouse]</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1621.9344" y="372.8389"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="59.7871" x="1540.2655" y="389.1357">Latency,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1600.0526" y="389.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="51.2217" x="1604.5028" y="389.1357">prompt</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1655.7245" y="389.1357"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="47.8789" x="1660.1747" y="389.1357">traces,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="44.0098" x="1560.2572" y="405.4326">replay</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1604.267" y="405.4326"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="79.3447" x="1608.7171" y="405.4326">diagnostics</text></g><g class="entity interactive-node" data-qualified-name="trader" data-source-line="1881" id="ent0001" data-node-id="ent0001" data-node-label="Quant Trader"><rect fill="#08427B" height="139.2079" rx="2.5" ry="2.5" style="stroke:#073B6F;stroke-width:0.5;" width="218.5771" x="7" y="290.39" /><image height="52" width="52" x="90.4424" xlink:href="data:image/png;base64,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" y="300.39" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="54.8281" x="56.1909" y="366.9339">Quant</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="111.019" y="366.9339"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="59.7969" x="116.5894" y="366.9339">Trader</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="114.0635" y="383.7024"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="34.7676" x="17" y="399.9993">Runs</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="51.7676" y="399.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="62.9658" x="56.2178" y="399.9993">prompts,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="119.1836" y="399.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57.9961" x="123.6338" y="399.9993">watches</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="181.6299" y="399.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="29.4971" x="186.0801" y="399.9993">risk,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="31.7861" y="416.2962">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="58.125" y="416.2962"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="64.8662" x="62.5752" y="416.2962">approves</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="127.4414" y="416.2962"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68.8994" x="131.8916" y="416.2962">execution</text></g><g class="entity interactive-node" data-qualified-name="analyst" data-source-line="1881" id="ent0002" data-node-id="ent0002" data-node-label="Ops Analyst"><rect fill="#08427B" height="139.2079" rx="2.5" ry="2.5" style="stroke:#073B6F;stroke-width:0.5;" width="185.0332" x="1945.95" y="619.39" /><image height="52" width="52" x="2012.6204" xlink:href="data:image/png;base64,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" y="629.39" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="34.5781" x="1984.5643" y="695.9339">Ops</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="2019.1424" y="695.9339"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="67.6563" x="2024.7127" y="695.9339">Analyst</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2036.2415" y="712.7024"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="57.873" x="1955.95" y="728.9993">Reviews</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2013.823" y="728.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="71.9209" x="2018.2732" y="728.9993">anomalies</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2090.1941" y="728.9993"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="2094.6443" y="728.9993">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="44.0098" x="1992.5223" y="745.2962">replay</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2036.532" y="745.2962"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="43.4287" x="2040.9822" y="745.2962">traces</text></g><g class="entity interactive-node" data-qualified-name="vertex" data-source-line="1915" id="ent0011" data-node-id="ent0011" data-node-label="Vertex AI"><rect fill="#8E8E93" height="87.5156" rx="2.5" ry="2.5" style="stroke:#7D7D82;stroke-width:0.5;" width="199.7783" x="1524.27" y="454.24" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="59.9453" x="1582.2334" y="479.0916">Vertex</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1642.1787" y="479.0916"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="18.3359" x="1647.749" y="479.0916">AI</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1621.9341" y="495.8601"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="73.3018" x="1534.27" y="512.157">Reasoning</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1607.5718" y="512.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1612.022" y="512.157">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1638.3608" y="512.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="71.2373" x="1642.811" y="512.157">extraction</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.8867" x="1598.7158" y="528.4539">models</text></g><g class="entity interactive-node" data-qualified-name="exchange" data-source-line="1915" id="ent0012" data-node-id="ent0012" data-node-label="Exchange APIs"><rect fill="#8E8E93" height="87.5156" rx="2.5" ry="2.5" style="stroke:#7D7D82;stroke-width:0.5;" width="208.7471" x="1519.78" y="577.24" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="86.6172" x="1558.2668" y="602.0916">Exchange</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1644.884" y="602.0916"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="39.5859" x="1650.4543" y="602.0916">APIs</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1621.9284" y="618.8601"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="48.624" x="1529.78" y="635.157">Market</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1578.404" y="635.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="31.5342" x="1582.8542" y="635.157">data</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1614.3884" y="635.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1618.8386" y="635.157">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1645.1775" y="635.157"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="68.8994" x="1649.6277" y="635.157">execution</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="50.5518" x="1598.8777" y="651.4539">venues</text></g><g class="entity interactive-node" data-qualified-name="notify" data-source-line="1915" id="ent0013" data-node-id="ent0013" data-node-label="Notification Fabric"><rect fill="#8E8E93" height="71.2188" rx="2.5" ry="2.5" style="stroke:#7D7D82;stroke-width:0.5;" width="187.3672" x="1080" y="454.39" /><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="105.7578" x="1090" y="479.2416">Notification</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="5.5703" x="1195.7578" y="479.2416"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="700" lengthAdjust="spacing" textLength="56.0391" x="1201.3281" y="479.2416">Fabric</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1171.4585" y="496.0101"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="37.1602" x="1102.3062" y="512.307">Slack</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1139.4663" y="512.307"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="26.3389" x="1143.9165" y="512.307">and</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1170.2554" y="512.307"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="70.3555" x="1174.7056" y="512.307">webhooks</text></g><g class="interactive-edge link" data-entity-1="ent0001" data-entity-2="ent0004" data-link-type="dependency" data-source-line="1404" id="lnk14" data-edge-source="ent0001" data-edge-target="ent0004" data-edge-kind="directed"><path d="M225.69,360 C256.73,360 282.47,360 313.2,360" fill="none" id="trader-to-web" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="321.2,360,313.2,357,313.2,363,321.2,360" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="32.168" x="256.58" y="357.1387">Uses</text></g><g class="interactive-edge link" data-entity-1="ent0002" data-entity-2="ent0004" data-link-type="dependency" data-source-line="1404" id="lnk15" data-edge-source="ent0002" data-edge-target="ent0004" data-edge-kind="directed"><path d="M1945.48,699.18 C1862.01,707.54 1735.48,718 1625.15,718 C730.26,718 730.26,718 730.26,718 C575.45,718 486.0013,528.302 448.7613,426.622" fill="none" id="analyst-to-web" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="446.01,419.11,445.9442,427.6538,451.5783,425.5903,446.01,419.11" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="55.6816" x="1104.68" y="715.1387">Reviews</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1160.3616" y="715.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="62.0332" x="1164.5394" y="715.1387">incidents</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1226.5726" y="715.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="12.6563" x="1230.7503" y="715.1387">in</text></g><g class="interactive-edge link" data-entity-1="ent0004" data-entity-2="ent0005" data-link-type="dependency" data-source-line="1404" id="lnk16" data-edge-source="ent0004" data-edge-target="ent0005" data-edge-kind="directed"><path d="M530.36,360 C560.41,360 585.27,360 615.51,360" fill="none" id="web-to-api" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="623.51,360,615.51,357,615.51,363,623.51,360" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="32.2734" x="560.94" y="357.1387">Calls</text></g><g class="interactive-edge link" data-entity-1="ent0005" data-entity-2="ent0008" data-link-type="dependency" data-source-line="1404" id="lnk17" data-edge-source="ent0005" data-edge-target="ent0008" data-edge-kind="directed"><path d="M838.87,324.9 C911.81,300.88 1000.0411,271.8313 1070.3111,248.7013" fill="none" id="api-to-cache" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1077.91,246.2,1069.3731,245.8517,1071.249,251.5509,1077.91,246.2" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="47.7246" x="874.58" y="254.9787">Checks</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="922.3046" y="254.9787"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="37.6055" x="926.4823" y="254.9787">warm</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="964.0878" y="254.9787"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="56.0684" x="968.2655" y="254.9787">answers</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1024.3339" y="254.9787"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="12.6563" x="1028.5116" y="254.9787">in</text></g><g class="interactive-edge link" data-entity-1="ent0005" data-entity-2="ent0009" data-link-type="dependency" data-source-line="1404" id="lnk18" data-edge-source="ent0005" data-edge-target="ent0009" data-edge-kind="directed"><path d="M779.67,308.97 C804.45,284.36 836.3,255.74 868.58,235 C953.03,180.73 980.04,174.48 1076.58,147 C1356.82,67.22 1438.86,46.49 1728.53,78 C1797.59,85.51 1866.0818,100.2481 1925.5418,115.2081" fill="none" id="api-to-db" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1933.3,117.16,1926.2738,112.2987,1924.8098,118.1174,1933.3,117.16" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="41.209" x="1337.28" y="61.4787">Reads</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1378.489" y="61.4787"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="25.2305" x="1382.6667" y="61.4787">and</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1407.8972" y="61.4787"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="42.1348" x="1412.0749" y="61.4787">writes</text></g><g class="interactive-edge link" data-entity-1="ent0005" data-entity-2="ent0006" data-link-type="dependency" data-source-line="1404" id="lnk19" data-edge-source="ent0005" data-edge-target="ent0006" data-edge-kind="directed"><path d="M838.87,360 C911.3,360 998.31,360 1068.43,360" fill="none" id="api-to-worker" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1076.43,360,1068.43,357,1068.43,363,1076.43,360" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="74.5781" x="869.58" y="357.1387">Dispatches</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="944.1581" y="357.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="38.7188" x="948.3359" y="357.1387">async</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="987.0546" y="357.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="36.4863" x="991.2323" y="357.1387">plans</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1027.7187" y="357.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="13.9805" x="1031.8964" y="357.1387">to</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0007" data-link-type="dependency" data-source-line="1404" id="lnk20" data-edge-source="ent0006" data-edge-target="ent0007" data-edge-kind="directed"><path d="M1253.12,300.61 C1259.32,294.89 1265.29,288.99 1270.78,283 C1287.02,265.27 1281.36,252.16 1300.78,238 C1367.31,189.45 1450.8784,167.7112 1519.3984,156.8612" fill="none" id="worker-to-risk" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1527.3,155.61,1518.9293,153.8981,1519.8676,159.8243,1527.3,155.61" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="63.3164" x="1301.78" y="147.0187">Validates</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1365.0964" y="147.0187"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="67.0195" x="1369.2741" y="147.0187">candidate</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1436.2937" y="147.0187"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="48.9902" x="1440.4714" y="147.0187">actions</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="29.4785" x="1380.8816" y="160.9874">with</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0011" data-link-type="dependency" data-source-line="1404" id="lnk21" data-edge-source="ent0006" data-edge-target="ent0011" data-edge-kind="directed"><path d="M1271.17,389.69 C1345.82,412.66 1441.1839,441.997 1516.4739,465.167" fill="none" id="worker-to-vertex" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1524.12,467.52,1517.3563,462.2997,1515.5915,468.0343,1524.12,467.52" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="62.6719" x="1302.78" y="397.9087">Requests</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1365.4519" y="397.9087"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="82.4824" x="1369.6296" y="397.9087">completions</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1452.112" y="397.9087"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="31.8867" x="1456.2898" y="397.9087">from</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0012" data-link-type="dependency" data-source-line="1404" id="lnk22" data-edge-source="ent0006" data-edge-target="ent0012" data-edge-kind="directed"><path d="M1253.6,418.95 C1259.7,424.76 1265.52,430.81 1270.78,437 C1288.33,457.61 1280.45,472.13 1300.78,490 C1363.07,544.72 1443.5363,576.2274 1511.9263,595.7174" fill="none" id="worker-to-exchange" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1519.62,597.91,1512.7485,592.8323,1511.1041,598.6026,1519.62,597.91" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="53.0098" x="1302.78" y="473.1387">Fetches</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1355.7898" y="473.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="41.0156" x="1359.9675" y="473.1387">prices</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1400.9831" y="473.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="25.2305" x="1405.1609" y="473.1387">and</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1430.3913" y="473.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="53.7715" x="1434.5691" y="473.1387">submits</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="43.9512" x="1364.5056" y="487.1074">orders</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1408.4568" y="487.1074"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="13.9805" x="1412.6345" y="487.1074">to</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0009" data-link-type="dependency" data-source-line="1404" id="lnk23" data-edge-source="ent0006" data-edge-target="ent0009" data-edge-kind="directed"><path d="M1270.95,338.15 C1381.6,312.84 1568.54,269.4 1728.53,229 C1796.91,211.73 1865.7626,193.2675 1925.5626,176.9375" fill="none" id="worker-to-db" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1933.28,174.83,1924.7723,174.0434,1926.3529,179.8315,1933.28,174.83" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="54.1289" x="1558.15" y="226.1387">Persists</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1612.2789" y="226.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="57.1758" x="1616.4566" y="226.1387">artifacts</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1673.6324" y="226.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="12.6563" x="1677.8102" y="226.1387">in</text></g><g class="interactive-edge link" data-entity-1="ent0006" data-entity-2="ent0010" data-link-type="dependency" data-source-line="1404" id="lnk24" data-edge-source="ent0006" data-edge-target="ent0010" data-edge-kind="directed"><path d="M1271.17,361.72 C1344.66,363.03 1437.6413,364.687 1512.6013,366.027" fill="none" id="worker-to-obs" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1520.6,366.17,1512.6549,363.0275,1512.5477,369.0265,1520.6,366.17" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="65.1211" x="1330.78" y="359.4987">Publishes</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1395.9011" y="359.4987"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="42.1465" x="1400.0788" y="359.4987">traces</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1442.2253" y="359.4987"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="13.9805" x="1446.403" y="359.4987">to</text></g><g class="interactive-edge link" data-entity-1="ent0007" data-entity-2="ent0009" data-link-type="dependency" data-source-line="1404" id="lnk25" data-edge-source="ent0007" data-edge-target="ent0009" data-edge-kind="directed"><path d="M1721.04,146 C1784.57,146 1859.89,146 1925.08,146" fill="none" id="risk-to-db" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1933.08,146,1925.08,143,1925.08,149,1933.08,146" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="41.209" x="1759.53" y="143.1387">Reads</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1800.739" y="143.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="61.8691" x="1804.9167" y="143.1387">positions</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1866.7859" y="143.1387"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="31.8867" x="1870.9636" y="143.1387">from</text></g><g class="interactive-edge link" data-entity-1="ent0005" data-entity-2="ent0013" data-link-type="dependency" data-source-line="1404" id="lnk26" data-edge-source="ent0005" data-edge-target="ent0013" data-edge-kind="directed"><path d="M838.87,391.47 C912.45,413.18 1001.6471,439.5158 1072.0671,460.2958" fill="none" id="api-to-notify" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1079.74,462.56,1072.9162,457.4185,1071.218,463.1732,1079.74,462.56" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="65.1211" x="885.08" y="385.1887">Publishes</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="950.2011" y="385.1887"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="76.4004" x="954.3788" y="385.1887">user-facing</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="54.8379" x="921.4316" y="399.1574">updates</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="976.2695" y="399.1574"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="13.9805" x="980.4472" y="399.1574">to</text></g><g class="interactive-edge link" data-entity-1="ent0010" data-entity-2="ent0002" data-link-type="dependency" data-source-line="1404" id="lnk27" data-edge-source="ent0010" data-edge-target="ent0002" data-edge-kind="directed"><path d="M1703.6,419.2 C1712.09,425.09 1720.55,431.1 1728.53,437 C1807.99,495.72 1888.7798,562.1461 1950.1198,613.9861" fill="none" id="obs-to-analyst" style="stroke:#666666;stroke-width:1;" /><polygon fill="#666666" points="1956.23,619.15,1952.0563,611.6948,1948.1834,616.2774,1956.23,619.15" style="stroke:#666666;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;" /><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="61.4063" x="1765.53" y="460.1087">Supports</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1826.9363" y="460.1087"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="42.6797" x="1831.114" y="460.1087">replay</text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="4.1777" x="1873.7937" y="460.1087"> </text><text fill="#333333" font-family="sans-serif" font-size="12" font-weight="700" lengthAdjust="spacing" textLength="19.3828" x="1877.9714" y="460.1087">for</text></g><g class="legend" data-source-line="1216"><rect fill="none" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1953.3502" y="785.5979" /><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="700" lengthAdjust="spacing" textLength="57.9209" x="1953.3502" y="798.593">Legend</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2011.2711" y="798.593"> </text><rect fill="#08427B" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1953.3502" y="801.8948" /><text fill="#073B6F" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1957.8004" y="814.8899">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1965.5045" y="814.8899"> </text><image height="13" width="13" x="1969.9547" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAAyUlEQVR4XmPgcKpmQMeywW0hfhULovk96hXQ5UAYQ+DTt5//kUHX0gPv0NWgcAwSJmSj6IACvJqaF+ytR9cAAirhXeY4NenF96egawABvDaB8PM3n1A01Mzeid9PMCzp1+ziWTw3mse1lh9dDkWTVECL+xdoyB26cP9/w9zd9568+gDm33v69j+3Sy0PiiaQichOwgVQNF2++xxdHivwKpm3Ba4JXRIXmLbu2Am4pqv3XqLLYwVB1YtWogQEn3udED7M61YnCFMLAFS9bYWccBSaAAAAAElFTkSuQmCC" y="805.2686" /><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="47.9883" x="1991.7782" y="814.8899">person</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2044.2166" y="814.8899"> </text><rect fill="#438DD5" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1953.3502" y="818.1917" /><text fill="#3C7FC0" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1957.8004" y="831.1868">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1965.5045" y="831.1868"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="66.3359" x="1974.4049" y="831.1868">container</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2045.191" y="831.1868"> </text><rect fill="#8E8E93" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1953.3502" y="834.4886" /><text fill="#7D7D82" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1957.8004" y="847.4837">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1965.5045" y="847.4837"> </text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115.7119" x="1974.4049" y="847.4837">external_system</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2094.567" y="847.4837"> </text><rect fill="#FAFAFA" height="16.2969" style="stroke:none;stroke-width:1;" width="196.0498" x="1953.3502" y="850.7854" /><text fill="#B8B8B8" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="7.7041" x="1957.8004" y="863.7805">▯</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="1965.5045" y="863.7805"> </text><text fill="#1A1A2E" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="121.7686" x="1974.4049" y="863.7805">system boundary</text><text fill="#1A1A2E" font-family="sans-serif" font-size="10" lengthAdjust="spacing" textLength="44.3262" x="2100.6236" y="864.7239">(dashed)</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="4.4502" x="2144.9498" y="863.7805"> </text><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="2149.4" y1="785.5979" y2="785.5979" /><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="2149.4" y1="801.8948" y2="801.8948" /><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="2149.4" y1="818.1917" y2="818.1917" /><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="2149.4" y1="834.4886" y2="834.4886" /><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="2149.4" y1="850.7854" y2="850.7854" /><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="2149.4" y1="867.0823" y2="867.0823" /><line style="stroke:none;stroke-width:1;" x1="1953.3502" x2="1953.3502" y1="785.5979" y2="867.0823" /><line style="stroke:none;stroke-width:1;" x1="2149.4" x2="2149.4" y1="785.5979" y2="867.0823" /></g></g></svg></div>
+        <div class="kc-hint">click a node &middot; connected paths lift, rest dim &middot; drag to pan &middot; scroll to zoom</div>
+        <div class="kc-toolbar">
+          <button class="sq" id="zoom-out" type="button" aria-label="Zoom out">&minus;</button>
+          <button class="sq" id="zoom-in" type="button" aria-label="Zoom in">+</button>
+          <button id="fit-view" type="button">Fit</button>
+          <button id="actual-size" type="button">100%</button>
         </div>
+        <div class="kc-status" id="status">Fit</div>
       </div>
-      <div class="canvas-status" id="diagram-status">Fit 100%</div>
-    </section>
-  </main>
+      <aside class="kc-panel">
+        <div class="kc-panel-head"><b>Nodes</b> <span id="node-count"></span></div>
+        <div class="kc-search">
+          <label><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="node-search" placeholder="Filter nodes" autocomplete="off"></label>
+        </div>
+        <div class="kc-node-list" id="node-list"></div>
+        <div class="kc-mini-wrap">
+          <div class="kc-mini" id="mini"><div class="kc-mini-rect" id="mini-rect"></div></div>
+          <div class="kc-mini-label">Minimap &middot; viewport region</div>
+        </div>
+      </aside>
+    </div>
+    <div class="kc-toast" id="toast"><span class="d"></span>Kroki URL copied to clipboard</div>
+  </div>
+  <script>window.__KROKI_URL__ = "https://kroki.io/c4plantuml/svg/rVZdc-I2FH3nV6i0D2QKySZkA9uZzizhY5NOdkNDspk-MbItjIosuZIM8XT633sk2Q5hs9M8FB4Qsu459-Pca300lmpbZKL1A5exKBJG1tbm5peTE013xym36yIqDNOxkpZJexyr7CQXVDqbnrGJ4NHJ-Lw3d1sPn29OMmos09hajmFBuWT6OHf4rZvRH7cP98ub6ex-eXf96eq-c9RqPeQJtWwqWAbwhS0F67Rzpo2S7S75KUrHSij9a_vHd8Pzs8Gl21sBtt6d-Y8_qXTCdHN60L-8mLWPXoVnT3BQUrF8jediPBgNP7yV5_3oYjDof4fHlMhE9hL-9PRieDl5K3x_PJiN3_1XGK_xDKfD6Yf-W3kGk8FkePYdnrgu40uG8_5wMnn_v0TSMCyT6CUJsPrTd4ckp6PT0dn0W5IZynH2XI1LVciE6jKw7KOO3PetqJdD921Q75ioAAVcbmTjP87Yoi5N1P4D09bcS61jNQVyl7R_L9Au5N7_hVX7rpCG5FpluTVdsqM2XjNDNDebLqEyITTHwy222BOLC8sh26MalEIEkABQbnNDRuGfB2VbznYGACqjgjPjoTRD-5YErsTMON8WXj_LOl0dPLYrpTMgjAqrYKwK433lMiXz6mn7iPzdIqRp8s6ORbAIIbltowRzXnxBQo7_NG459wESjJBcGe6i6BITM0k1V_DLedslieZC9BK1kwSzyTK4uE9Dc-4i1S5BiMGBkNH82sHPMHqqJRxfdwH5V4FTRCukTKZIZZFwS4RKU__X45MVlT0cOODZKb3xpZrWGSePfstHMhaqSAiqRn5T0X5s1BiWRaLskkwlTJCYCoGKRlrB1EWeuRqkDBS0KuM-a6h4-w4_ZCrhpU_hvLRr8C-Y3vLY70yfkMFCM4I0xBsQ5ErwuCRsS0VBQ2a9iklaUJ2YA5qYws4rxOSoFCNjtxE0k3AfzyPVGfRidsDQDG8ALx6zVtr2BN-yBMGAgctXwphEnaQWg9PMwiodAlHGppp5gge8VJzjteh9NVkKmVau47cR6b7zSLhTQAT7LY244LYkV4WbHGgAJu-ZGy5Wl-RnMkZSNleQr2e_Ab6My5qzQu_WHZFwmko4yGPH-E_TGNMn29kyjcYGxle_IKPrkCyKBnQRutxA5wD0SvG1dyh7EOwpXlOZMl-9sHTC9bn4TKEsSzBfaAVVa27LZMEOkKSyfFW61nILHocmmNFI89ihLQSNNx4HPblWauPbHIOrmT-hV1EB98Q9aGZIeFJPDlwJeIJB7VbVSX8gNOHYabsGcDu1rMZelBhjjYT2APzJJLDQJMykneaWvYBq2m_CTV6NQ2pKGRN3-TDEqtqf6mDVOV8x6NyYNnBGJn5JQlHgDy4zB1ZNXe_CqDB-OAkWDFbQyYHBXhVnLLiVI-3VbDVFlHGABP1-66QP241t7qhw8eIrOLef3epg0Pi8iAQ3jiNI9RkwRLuXxXqgvnDaZ7JRyzOau8_1wOyUW-QhXQ20p35-pyyKPEfPm7pLMPv9S-Pq9hFXuU_TLxNc4z4ymbg73r8";</script>
   <script>
-    const stage = document.getElementById("diagram-stage");
-    const viewport = document.getElementById("diagram-viewport");
-    const content = document.getElementById("diagram-content");
-    const status = document.getElementById("diagram-status");
-    const zoomInButton = document.getElementById("zoom-in");
-    const zoomOutButton = document.getElementById("zoom-out");
-    const fitButton = document.getElementById("fit-view");
-    const actualSizeButton = document.getElementById("actual-size");
-    const svg = content.querySelector("svg");
+(function () {
+  const app = document.getElementById("app");
+  const viewport = document.getElementById("viewport");
+  const content = document.getElementById("content");
+  const statusEl = document.getElementById("status");
+  const svg = content.querySelector("svg");
+  const nodeListEl = document.getElementById("node-list");
+  const nodeSearch = document.getElementById("node-search");
+  const nodeCountEl = document.getElementById("node-count");
+  const mini = document.getElementById("mini");
+  const miniRect = document.getElementById("mini-rect");
+  const themeToggle = document.getElementById("theme-toggle");
+  const copyBtn = document.getElementById("copy-url");
+  const toast = document.getElementById("toast");
+  const KROKI_URL = window.__KROKI_URL__ || "";
+  const THEME_KEY = "kroki-viewer-theme";
 
-    if (svg) {
-      const nodes = Array.from(svg.querySelectorAll("[data-node-id]"));
-      const edges = Array.from(svg.querySelectorAll("[data-edge-source][data-edge-target]"));
-      const PADDING = 28;
-      const PAN_STEP = 60;
-      const SCALE_STEP = 1.16;
-      const MIN_SCALE = 0.08;
-      const MAX_SCALE = 3.5;
-      const rawBounds = svg.getBBox();
-      const normalizedBounds = (Number.isFinite(rawBounds.width) && rawBounds.width > 0 && Number.isFinite(rawBounds.height) && rawBounds.height > 0)
-        ? rawBounds
-        : null;
+  // theme
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "light" || saved === "dark") app.setAttribute("data-theme", saved);
+  } catch (e) {}
+  themeToggle.addEventListener("click", () => {
+    const next = app.getAttribute("data-theme") === "light" ? "dark" : "light";
+    app.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  });
 
-      let scale = 1;
-      let translateX = 0;
-      let translateY = 0;
-      let fitScale = 1;
-      let isSpacePressed = false;
-      let isDragging = false;
-      let activePointerId = null;
-      let dragStartX = 0;
-      let dragStartY = 0;
-      let dragOriginX = 0;
-      let dragOriginY = 0;
-      let shouldAutoFitOnResize = true;
-      let selectedNodeId = null;
+  // copy url
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      if (KROKI_URL && navigator.clipboard) navigator.clipboard.writeText(KROKI_URL).catch(() => {});
+      toast.classList.add("show");
+      clearTimeout(window.__kcToast);
+      window.__kcToast = setTimeout(() => toast.classList.remove("show"), 1900);
+    });
+  }
 
-      if (normalizedBounds) {
-        svg.style.transform = `translate(${-normalizedBounds.x}px, ${-normalizedBounds.y}px)`;
-        svg.style.transformOrigin = "top left";
-        content.style.width = `${normalizedBounds.width}px`;
-        content.style.height = `${normalizedBounds.height}px`;
-      }
+  if (!svg) return;
 
-      const getCanvasSize = () => {
-        if (normalizedBounds) {
-          return { width: normalizedBounds.width, height: normalizedBounds.height };
-        }
+  const nodes = Array.from(svg.querySelectorAll("[data-node-id]"));
+  const edges = Array.from(svg.querySelectorAll("[data-edge-source][data-edge-target]"));
 
-        const viewBox = svg.viewBox && svg.viewBox.baseVal;
-        if (viewBox && viewBox.width && viewBox.height) {
-          return { width: viewBox.width, height: viewBox.height };
-        }
+  const PADDING = 40;
+  const SCALE_STEP = 1.16;
+  const MIN_SCALE = 0.08;
+  const MAX_SCALE = 3.5;
 
-        const box = svg.getBBox();
-        return { width: box.width || 1, height: box.height || 1 };
-      };
+  const rawBounds = svg.getBBox();
+  const bounds = (rawBounds.width > 0 && rawBounds.height > 0) ? rawBounds : null;
 
-      const clampScale = (nextScale) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, nextScale));
+  // minimap clone (before we mutate the live svg transform)
+  if (bounds) {
+    const clone = svg.cloneNode(true);
+    clone.removeAttribute("style");
+    clone.removeAttribute("width");
+    clone.removeAttribute("height");
+    clone.setAttribute("viewBox", bounds.x + " " + bounds.y + " " + bounds.width + " " + bounds.height);
+    clone.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    clone.querySelectorAll("[data-node-id],[data-edge-source]").forEach((el) => {
+      el.classList.remove("interactive-node", "interactive-edge");
+      el.style.pointerEvents = "none";
+    });
+    mini.insertBefore(clone, miniRect);
+  }
 
-      const applyTransform = () => {
-        content.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        const zoomPercent = Math.round(scale * 100);
-        status.textContent = `Zoom ${zoomPercent}%`;
-      };
+  let scale = 1, tx = 0, ty = 0, bw = 1, bh = 1;
 
-      const centerForScale = (nextScale) => {
-        const canvas = getCanvasSize();
-        const viewportRect = viewport.getBoundingClientRect();
-        return {
-          x: (viewportRect.width - canvas.width * nextScale) / 2,
-          y: (viewportRect.height - canvas.height * nextScale) / 2,
-        };
-      };
+  if (bounds) {
+    svg.style.transformOrigin = "top left";
+    svg.style.transform = "translate(" + (-bounds.x) + "px," + (-bounds.y) + "px)";
+    content.style.width = bounds.width + "px";
+    content.style.height = bounds.height + "px";
+    bw = bounds.width; bh = bounds.height;
+  }
 
-      const fitToViewport = () => {
-        const canvas = getCanvasSize();
-        const viewportRect = viewport.getBoundingClientRect();
-        const usableWidth = Math.max(120, viewportRect.width - PADDING * 2);
-        const usableHeight = Math.max(120, viewportRect.height - PADDING * 2);
-        fitScale = clampScale(Math.min(usableWidth / canvas.width, usableHeight / canvas.height));
-        scale = fitScale;
-        const centered = centerForScale(scale);
-        translateX = centered.x;
-        translateY = centered.y;
-        shouldAutoFitOnResize = true;
-        applyTransform();
-        status.textContent = `Fit ${Math.round(scale * 100)}%`;
-      };
+  const clamp = (v) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, v));
 
-      const resetToActualSize = () => {
-        scale = 1;
-        const centered = centerForScale(scale);
-        translateX = centered.x;
-        translateY = centered.y;
-        shouldAutoFitOnResize = false;
-        applyTransform();
-      };
+  function apply() {
+    content.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+    statusEl.textContent = "Zoom " + Math.round(scale * 100) + "%";
+    updateMini();
+  }
 
-      const zoomAtPoint = (factor, clientX, clientY) => {
-        const viewportRect = viewport.getBoundingClientRect();
-        const pointerX = clientX - viewportRect.left;
-        const pointerY = clientY - viewportRect.top;
-        const nextScale = clampScale(scale * factor);
-        const scaleRatio = nextScale / scale;
+  function updateMini() {
+    if (!miniRect || !mini || !bw) return;
+    const mb = mini.getBoundingClientRect();
+    const pad = 8;
+    const availW = mb.width - pad * 2, availH = mb.height - pad * 2;
+    const s = Math.min(availW / bw, availH / bh);
+    const dispW = bw * s, dispH = bh * s;
+    const offX = pad + (availW - dispW) / 2;
+    const offY = pad + (availH - dispH) / 2;
+    const vr = viewport.getBoundingClientRect();
+    const vx = -tx / scale, vy = -ty / scale;
+    const vw = vr.width / scale, vh = vr.height / scale;
+    let rx = offX + (vx / bw) * dispW;
+    let ry = offY + (vy / bh) * dispH;
+    let rw = (vw / bw) * dispW;
+    let rh = (vh / bh) * dispH;
+    // clamp to displayed area
+    const left = Math.max(offX, rx), top = Math.max(offY, ry);
+    const right = Math.min(offX + dispW, rx + rw), bottom = Math.min(offY + dispH, ry + rh);
+    miniRect.style.left = left + "px";
+    miniRect.style.top = top + "px";
+    miniRect.style.width = Math.max(0, right - left) + "px";
+    miniRect.style.height = Math.max(0, bottom - top) + "px";
+  }
 
-        translateX = pointerX - (pointerX - translateX) * scaleRatio;
-        translateY = pointerY - (pointerY - translateY) * scaleRatio;
-        scale = nextScale;
-        shouldAutoFitOnResize = false;
-        applyTransform();
-      };
+  function fit() {
+    const r = viewport.getBoundingClientRect();
+    scale = clamp(Math.min((r.width - PADDING * 2) / bw, (r.height - PADDING * 2) / bh));
+    tx = (r.width - bw * scale) / 2;
+    ty = (r.height - bh * scale) / 2;
+    apply();
+    statusEl.textContent = "Fit " + Math.round(scale * 100) + "%";
+  }
 
-      const panBy = (dx, dy) => {
-        translateX += dx;
-        translateY += dy;
-        shouldAutoFitOnResize = false;
-        applyTransform();
-      };
+  function zoomAt(factor, cx, cy) {
+    const r = viewport.getBoundingClientRect();
+    const px = cx - r.left, py = cy - r.top;
+    const ns = clamp(scale * factor);
+    const k = ns / scale;
+    tx = px - (px - tx) * k;
+    ty = py - (py - ty) * k;
+    scale = ns; apply();
+  }
 
-      fitToViewport();
+  function actual() {
+    const r = viewport.getBoundingClientRect();
+    scale = 1; tx = (r.width - bw) / 2; ty = (r.height - bh) / 2; apply();
+  }
 
-      const nodeMap = new Map();
-      const nodeCenterCache = new Map();
-      for (const node of nodes) {
-        const nodeId = node.dataset.nodeId;
-        if (!nodeMap.has(nodeId)) nodeMap.set(nodeId, []);
-        nodeMap.get(nodeId).push(node);
-      }
+  // ── highlighting ──
+  const nodeMap = new Map();
+  const centerCache = new Map();
+  nodes.forEach((n) => {
+    const id = n.dataset.nodeId;
+    if (!nodeMap.has(id)) nodeMap.set(id, []);
+    nodeMap.get(id).push(n);
+  });
 
-      const getNodeCenter = (nodeId) => {
-        if (nodeCenterCache.has(nodeId)) return nodeCenterCache.get(nodeId);
+  function center(id) {
+    if (centerCache.has(id)) return centerCache.get(id);
+    const els = nodeMap.get(id) || [];
+    let x = 0, y = 0, c = 0;
+    els.forEach((el) => { const b = el.getBBox(); if (isFinite(b.x)) { x += b.x + b.width / 2; y += b.y + b.height / 2; c++; } });
+    const r = c ? { x: x / c, y: y / c } : null;
+    centerCache.set(id, r); return r;
+  }
 
-        const relatedNodes = nodeMap.get(nodeId) || [];
-        if (!relatedNodes.length) return null;
+  function flowClass(s, t) {
+    const a = center(s), b = center(t);
+    if (!a || !b) return "edge-flow-forward";
+    const dx = b.x - a.x, dy = b.y - a.y;
+    if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
+    return dy >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
+  }
 
-        let totalX = 0;
-        let totalY = 0;
-        let count = 0;
+  let selected = null;
 
-        for (const related of relatedNodes) {
-          const box = related.getBBox();
-          if (!Number.isFinite(box.x) || !Number.isFinite(box.y)) continue;
-          totalX += box.x + box.width / 2;
-          totalY += box.y + box.height / 2;
-          count += 1;
-        }
+  function reset() {
+    selected = null;
+    nodes.forEach((n) => n.classList.remove("is-dimmed", "is-active", "is-connected"));
+    edges.forEach((e) => e.classList.remove("is-dimmed", "is-connected", "edge-neutral", "edge-flow-forward", "edge-flow-reverse"));
+    nodeListEl.querySelectorAll(".kc-node.sel").forEach((el) => el.classList.remove("sel"));
+  }
 
-        const center = count ? { x: totalX / count, y: totalY / count } : null;
-        nodeCenterCache.set(nodeId, center);
-        return center;
-      };
+  function focus(id) {
+    reset();
+    selected = id;
+    nodes.forEach((n) => n.classList.add("is-dimmed"));
+    edges.forEach((e) => e.classList.add("is-dimmed"));
+    (nodeMap.get(id) || []).forEach((n) => { n.classList.remove("is-dimmed"); n.classList.add("is-active"); });
+    edges.forEach((e) => {
+      const s = e.dataset.edgeSource, t = e.dataset.edgeTarget;
+      if (s !== id && t !== id) return;
+      e.classList.remove("is-dimmed"); e.classList.add("is-connected");
+      const directed = e.dataset.edgeKind === "directed";
+      if (!directed || s === t) e.classList.add("edge-neutral");
+      else e.classList.add(flowClass(s, t));
+      [s, t].forEach((rid) => (nodeMap.get(rid) || []).forEach((rn) => {
+        rn.classList.remove("is-dimmed");
+        rn.classList.add(rid === id ? "is-active" : "is-connected");
+      }));
+    });
+    const item = nodeListEl.querySelector('.kc-node[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+    if (item) item.classList.add("sel");
+  }
 
-      const getFlowDirectionClass = (sourceId, targetId) => {
-        const sourceCenter = getNodeCenter(sourceId);
-        const targetCenter = getNodeCenter(targetId);
-        if (!sourceCenter || !targetCenter) return "edge-flow-forward";
+  // Node clicks are delegated through the viewport: pointer capture during a
+  // drag retargets pointerup (and thus click) to the viewport, so per-node
+  // click listeners would never fire after any capture.
+  viewport.addEventListener("click", (ev) => {
+    if (justDragged) return;
+    const hit = ev.target.closest("[data-node-id]");
+    if (hit) focus(hit.dataset.nodeId);
+    else reset();
+  });
 
-        const dx = targetCenter.x - sourceCenter.x;
-        const dy = targetCenter.y - sourceCenter.y;
+  // ── node list ──
+  const seen = new Set();
+  const order = [];
+  const labels = new Map();
+  nodes.forEach((n) => { const id = n.dataset.nodeId; if (!seen.has(id)) { seen.add(id); order.push(id); } });
+  nodes.forEach((n) => {
+    const id = n.dataset.nodeId;
+    const label = (n.dataset.nodeLabel || "").trim();
+    if (label && !labels.has(id)) labels.set(id, label);
+  });
+  const labelFor = (id) => labels.get(id) || id;
+  const edgeCount = new Map();
+  edges.forEach((e) => {
+    edgeCount.set(e.dataset.edgeSource, (edgeCount.get(e.dataset.edgeSource) || 0) + 1);
+    edgeCount.set(e.dataset.edgeTarget, (edgeCount.get(e.dataset.edgeTarget) || 0) + 1);
+  });
 
-        if (Math.abs(dx) >= Math.abs(dy)) {
-          return dx >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
-        }
-
-        return dy >= 0 ? "edge-flow-forward" : "edge-flow-reverse";
-      };
-
-      const resetState = () => {
-        selectedNodeId = null;
-        for (const node of nodes) {
-          node.classList.remove("is-dimmed", "is-active", "is-connected");
-        }
-        for (const edge of edges) {
-          edge.classList.remove(
-            "is-dimmed",
-            "is-connected",
-            "edge-incoming",
-            "edge-outgoing",
-            "edge-neutral",
-            "edge-flow-forward",
-            "edge-flow-reverse"
-          );
-        }
-      };
-
-      const focusNode = (nodeId) => {
-        selectedNodeId = nodeId;
-        resetState();
-        selectedNodeId = nodeId;
-
-        for (const node of nodes) {
-          node.classList.add("is-dimmed");
-        }
-        for (const edge of edges) {
-          edge.classList.add("is-dimmed");
-        }
-
-        for (const active of nodeMap.get(nodeId) || []) {
-          active.classList.remove("is-dimmed");
-          active.classList.add("is-active");
-        }
-
-        for (const edge of edges) {
-          const source = edge.dataset.edgeSource;
-          const target = edge.dataset.edgeTarget;
-          if (source !== nodeId && target !== nodeId) continue;
-
-          edge.classList.remove("is-dimmed");
-          edge.classList.add("is-connected");
-
-          const directed = edge.dataset.edgeKind === "directed";
-          if (!directed || source === target) {
-            edge.classList.add("edge-neutral");
-          } else if (source === nodeId) {
-            edge.classList.add("edge-outgoing");
-            edge.classList.add(getFlowDirectionClass(source, target));
-          } else {
-            edge.classList.add("edge-incoming");
-            edge.classList.add(getFlowDirectionClass(source, target));
-          }
-
-          for (const relatedId of [source, target]) {
-            for (const related of nodeMap.get(relatedId) || []) {
-              related.classList.remove("is-dimmed");
-              related.classList.add(relatedId === nodeId ? "is-active" : "is-connected");
-            }
-          }
-        }
-      };
-
-      for (const node of nodes) {
-        node.addEventListener("click", (event) => {
-          event.stopPropagation();
-          focusNode(node.dataset.nodeId);
-        });
-      }
-
-      svg.addEventListener("click", (event) => {
-        const clickedNode = event.target.closest("[data-node-id]");
-        if (clickedNode) return;
-        resetState();
+  if (order.length) {
+    nodeCountEl.textContent = "· " + order.length;
+    order.forEach((id) => {
+      const row = document.createElement("div");
+      row.className = "kc-node";
+      row.dataset.id = id;
+      row.innerHTML = '<span class="dot"></span><span class="name"></span><span class="ct mono">' + (edgeCount.get(id) || 0) + "</span>";
+      row.querySelector(".name").textContent = labelFor(id);
+      row.dataset.hay = (id + " " + labelFor(id)).toLowerCase();
+      row.addEventListener("click", () => focus(id));
+      nodeListEl.appendChild(row);
+    });
+    nodeSearch.addEventListener("input", () => {
+      const q = nodeSearch.value.trim().toLowerCase();
+      nodeListEl.querySelectorAll(".kc-node").forEach((row) => {
+        row.style.display = (!q || row.dataset.hay.includes(q)) ? "" : "none";
       });
+    });
+  } else {
+    const panelSearch = document.querySelector(".kc-search");
+    if (panelSearch) panelSearch.style.display = "none";
+    nodeListEl.innerHTML = '<div class="kc-empty">Node highlighting ships via the Kroki annotator for this engine. Pan &amp; zoom still work here.</div>';
+  }
 
-      viewport.addEventListener("click", (event) => {
-        if (!event.target.closest("[data-node-id]")) {
-          resetState();
-        }
-      });
+  // ── pan / zoom wiring ──
+  viewport.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey || e.altKey) { zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY); return; }
+    zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+  }, { passive: false });
 
-      zoomInButton.addEventListener("click", () => {
-        const rect = viewport.getBoundingClientRect();
-        zoomAtPoint(SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
-      });
-
-      zoomOutButton.addEventListener("click", () => {
-        const rect = viewport.getBoundingClientRect();
-        zoomAtPoint(1 / SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
-      });
-
-      fitButton.addEventListener("click", fitToViewport);
-      actualSizeButton.addEventListener("click", resetToActualSize);
-
-      viewport.addEventListener("wheel", (event) => {
-        if (event.ctrlKey || event.metaKey || event.altKey) {
-          event.preventDefault();
-          const factor = Math.exp(-event.deltaY * 0.0015);
-          zoomAtPoint(factor, event.clientX, event.clientY);
-          return;
-        }
-
-        event.preventDefault();
-        const panX = event.shiftKey ? -event.deltaY : -event.deltaX;
-        const panY = event.shiftKey ? 0 : -event.deltaY;
-        panBy(panX, panY);
-      }, { passive: false });
-
-      viewport.addEventListener("pointerdown", (event) => {
-        const wantsPan = event.button === 1 || (event.button === 0 && isSpacePressed);
-        if (!wantsPan) return;
-
-        event.preventDefault();
-        isDragging = true;
-        activePointerId = event.pointerId;
-        dragStartX = event.clientX;
-        dragStartY = event.clientY;
-        dragOriginX = translateX;
-        dragOriginY = translateY;
-        viewport.classList.add("is-dragging");
-        viewport.setPointerCapture(event.pointerId);
-      });
-
-      viewport.addEventListener("pointermove", (event) => {
-        if (!isDragging || event.pointerId !== activePointerId) return;
-        translateX = dragOriginX + (event.clientX - dragStartX);
-        translateY = dragOriginY + (event.clientY - dragStartY);
-        shouldAutoFitOnResize = false;
-        applyTransform();
-      });
-
-      const endDrag = (event) => {
-        if (!isDragging) return;
-        if (event && activePointerId !== null && event.pointerId !== activePointerId) return;
-        isDragging = false;
-        activePointerId = null;
-        viewport.classList.remove("is-dragging");
-      };
-
-      viewport.addEventListener("pointerup", endDrag);
-      viewport.addEventListener("pointercancel", endDrag);
-      viewport.addEventListener("pointerleave", endDrag);
-
-      const updatePanModeClass = () => {
-        viewport.classList.toggle("is-pan-mode", isSpacePressed && !isDragging);
-      };
-
-      window.addEventListener("keydown", (event) => {
-        if (event.target && /input|textarea|select/i.test(event.target.tagName)) return;
-
-        if (event.code === "Space") {
-          event.preventDefault();
-        }
-
-        if (event.code === "Space" && !event.repeat) {
-          isSpacePressed = true;
-          updatePanModeClass();
-        }
-
-        if (event.key === "+" || event.key === "=") {
-          event.preventDefault();
-          const rect = viewport.getBoundingClientRect();
-          zoomAtPoint(SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
-        } else if (event.key === "-" || event.key === "_") {
-          event.preventDefault();
-          const rect = viewport.getBoundingClientRect();
-          zoomAtPoint(1 / SCALE_STEP, rect.left + rect.width / 2, rect.top + rect.height / 2);
-        } else if (event.key === "0") {
-          event.preventDefault();
-          fitToViewport();
-        } else if (event.key === "1") {
-          event.preventDefault();
-          resetToActualSize();
-        } else if (event.key === "ArrowLeft") {
-          event.preventDefault();
-          panBy(PAN_STEP, 0);
-        } else if (event.key === "ArrowRight") {
-          event.preventDefault();
-          panBy(-PAN_STEP, 0);
-        } else if (event.key === "ArrowUp") {
-          event.preventDefault();
-          panBy(0, PAN_STEP);
-        } else if (event.key === "ArrowDown") {
-          event.preventDefault();
-          panBy(0, -PAN_STEP);
-        }
-      });
-
-      window.addEventListener("keyup", (event) => {
-        if (event.code === "Space") {
-          event.preventDefault();
-          isSpacePressed = false;
-          updatePanModeClass();
-        }
-      });
-
-      window.addEventListener("resize", () => {
-        if (shouldAutoFitOnResize) fitToViewport();
-      });
+  let drag = false, sx = 0, sy = 0, ox = 0, oy = 0, justDragged = false;
+  viewport.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    drag = true; justDragged = false; sx = e.clientX; sy = e.clientY; ox = tx; oy = ty;
+    viewport.classList.add("dragging");
+  });
+  viewport.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    if (!justDragged && Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 3) {
+      justDragged = true;
+      // Capture only once a real drag starts, so stationary clicks keep their
+      // original target and node selection still works.
+      viewport.setPointerCapture(e.pointerId);
     }
-  </script>
+    if (!justDragged) return;
+    tx = ox + (e.clientX - sx); ty = oy + (e.clientY - sy); apply();
+  });
+  const endDrag = () => { if (!drag) return; drag = false; viewport.classList.remove("dragging"); setTimeout(() => { justDragged = false; }, 0); };
+  viewport.addEventListener("pointerup", endDrag);
+  viewport.addEventListener("pointercancel", endDrag);
+
+  document.getElementById("zoom-in").addEventListener("click", () => { const r = viewport.getBoundingClientRect(); zoomAt(SCALE_STEP, r.left + r.width / 2, r.top + r.height / 2); });
+  document.getElementById("zoom-out").addEventListener("click", () => { const r = viewport.getBoundingClientRect(); zoomAt(1 / SCALE_STEP, r.left + r.width / 2, r.top + r.height / 2); });
+  document.getElementById("fit-view").addEventListener("click", fit);
+  document.getElementById("actual-size").addEventListener("click", actual);
+
+  window.addEventListener("keydown", (e) => {
+    if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); const r = viewport.getBoundingClientRect(); zoomAt(SCALE_STEP, r.left + r.width / 2, r.top + r.height / 2); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); const r = viewport.getBoundingClientRect(); zoomAt(1 / SCALE_STEP, r.left + r.width / 2, r.top + r.height / 2); }
+    else if (e.key === "0") { e.preventDefault(); fit(); }
+    else if (e.key === "1") { e.preventDefault(); actual(); }
+    else if (e.key === "Escape") { reset(); }
+  });
+
+  window.addEventListener("resize", updateMini);
+  fit();
+})();
+</script>
 </body>
 </html>

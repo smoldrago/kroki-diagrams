@@ -143,12 +143,6 @@ a { color: inherit; text-decoration: none; }
 .kc-eng .ct { font: 500 11px/1 'JetBrains Mono', monospace; color: var(--faint); }
 .kc-eng.active { background: var(--panel2); }
 .kc-eng.active .lb { color: var(--text); }
-.kc-rail-sep { height: 1px; background: var(--border); margin: 16px 0; }
-.kc-support { display: flex; flex-direction: column; gap: 9px; }
-.kc-support div { display: flex; align-items: center; gap: 9px; font: 500 12px system-ui; color: var(--text2); }
-.kc-support .full-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }
-.kc-support .best-dot { width: 7px; height: 7px; border-radius: 50%; border: 1px dashed var(--muted); }
-
 .kc-content { flex: 1; padding: 26px 28px; min-width: 0; }
 .kc-content-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; gap: 12px; }
 .kc-content-head h1 { font: 700 20px system-ui; color: var(--text); letter-spacing: -.02em; }
@@ -324,12 +318,8 @@ INDEX_SCRIPT = """
 def build_index_html(entries: list[dict[str, str]], title: str) -> str:
     # per-engine counts (only engines that appear)
     counts: dict[str, int] = {}
-    full_n = 0
     for e in entries:
         counts[e["engine"]] = counts.get(e["engine"], 0) + 1
-        if e["tier"] == "full":
-            full_n += 1
-    best_n = len(entries) - full_n
 
     # engine rail
     rail_rows = ['<div class="kc-eng active" data-engine="all"><span class="sw" style="background:var(--text2)"></span><span class="lb">All</span><span class="ct">%d</span></div>' % len(entries)]
@@ -404,10 +394,10 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
 <body>
   <div id="app" data-theme="dark">
     <div class="kc-top">
-      <a class="kc-logo" href=".">
+      <div class="kc-logo">
         <span class="kc-logo-mark"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 11.3 17 6.7M7 12.7 17 17.3"/></svg></span>
         <b>kroki</b><span>diagrams</span>
-      </a>
+      </div>
       <label class="kc-searchbar">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="search" placeholder="Search diagrams\u2026" autocomplete="off">
@@ -424,12 +414,6 @@ def build_index_html(entries: list[dict[str, str]], title: str) -> str:
       <aside class="kc-rail">
         <div class="kc-rail-h">Engines</div>
         __RAIL__
-        <div class="kc-rail-sep"></div>
-        <div class="kc-rail-h">Support</div>
-        <div class="kc-support">
-          <div><span class="full-dot"></span>Full &middot; __FULL_N__</div>
-          <div><span class="best-dot"></span>Best effort &middot; __BEST_N__</div>
-        </div>
       </aside>
       <main class="kc-content">
         <div class="kc-content-head">
@@ -460,8 +444,6 @@ __CARDS__
         "__SCRIPT__": INDEX_SCRIPT,
         "__RAIL__": rail_html,
         "__CARDS__": cards_html,
-        "__FULL_N__": str(full_n),
-        "__BEST_N__": str(best_n),
         "__N__": str(n),
     }.items():
         out = out.replace(token, value)

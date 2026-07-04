@@ -56,14 +56,17 @@ So it is not just “render this diagram.” It is a full diagram production wor
 
 When you render an interactive wrapper, the generated HTML viewer can provide:
 
-- click-to-select node highlighting
+- a refined dark interface with a dark/light theme toggle
+- click-to-select node highlighting in a calm, monochrome accent
 - connected-node and edge emphasis
 - directional edge flow when the SVG exposes source and target metadata
 - neutral current-style edge animation when direction is not reliable
 - dimming of unrelated nodes without making them disappear
-- fit-to-view on load
-- pan and zoom controls
-- a generated diagram index page for browsing many diagrams
+- a live, searchable node list built from the diagram
+- a minimap showing the current viewport region
+- pan and zoom (drag, scroll, buttons, keyboard) with fit-to-view and 100% controls
+- a copy-Kroki-URL action wired to the shareable link
+- a generated diagram gallery for browsing many diagrams, with an engine filter rail, search, grid/list views, and a matching theme toggle
 
 Support is strongest for:
 
@@ -108,9 +111,9 @@ Important pieces:
 - [`render_kroki_diagram.py`](plugins/kroki-diagrams/scripts/render_kroki_diagram.py)
   Renders diagram source through Kroki, prints a shareable URL, writes metadata, and refreshes `index.html`.
 - [`build_interactive_kroki_html.py`](plugins/kroki-diagrams/scripts/build_interactive_kroki_html.py)
-  Wraps rendered SVG output in an interactive HTML viewer.
+  Wraps rendered SVG output in an interactive HTML viewer (dark/light theme, node list, minimap, copy-URL).
 - [`build_diagram_index.py`](plugins/kroki-diagrams/scripts/build_diagram_index.py)
-  Builds the collection browser page for a directory of diagram artifacts.
+  Builds the collection gallery page for a directory of diagram artifacts (filter rail, search, grid/list, theme toggle).
 - `references/`
   Holds the selection matrix, style templates, layout rules, and support notes the agent reads on demand.
 
@@ -262,10 +265,15 @@ install-pi.sh
 
 ## Roadmap
 
-- UI refinement and general "desloppification" of the interactive viewer
-- Dark mode support
+Shipped:
+
+- ✅ UI refinement and general "desloppification" of the interactive viewer and gallery
+- ✅ Dark mode, plus a light theme toggle across the viewer and gallery
+- ✅ Node list, minimap, search/filter, and copy-Kroki-URL in the generated pages
+
+Planned:
+
 - Better edge-case handling for large diagrams and inconsistent SVG structures
-- UI polishing across the viewer and generated index pages
 - Product presets for common use cases like architecture, sequence, schema, and planning
 - Theme packs for different visual directions and documentation contexts
 

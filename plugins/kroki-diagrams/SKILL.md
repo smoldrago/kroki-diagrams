@@ -107,7 +107,7 @@ python3 scripts/render_kroki_diagram.py --engine erd --input /path/to/diagram.er
 ```
 
 The script also prints a shareable Kroki URL for the generated source.
-It also writes per-artifact metadata and refreshes the parent `index.html` collection page by default, so every normal artifact render updates the directory overview automatically unless `--skip-index` is passed.
+It also writes per-artifact metadata (including that shareable Kroki URL) and refreshes the parent `index.html` collection page by default, so every normal artifact render updates the directory overview automatically unless `--skip-index` is passed. The generated `index.html` is a modern gallery: an engine filter rail with live counts, diagram search, grid and list views, a dark/light theme toggle, per-engine accents, interactive-tier badges, a per-card copy-Kroki-URL action, and an empty state.
 
 To build the interactive wrapper at the same time:
 
@@ -115,13 +115,16 @@ To build the interactive wrapper at the same time:
 python3 scripts/render_kroki_diagram.py --engine plantuml --input /path/to/diagram.puml --output /path/to/rendered.svg --interactive-output /path/to/interactive.html
 ```
 
-The wrapper adds:
-- click-to-select highlight on the current node
-- connected-edge animation
-- directional flow where the SVG exposes source and target
+The wrapper is a refined dark viewer (with a light theme toggle) and adds:
+- click-to-select highlight on the current node, in a calm monochrome accent
+- connected-edge emphasis with a subtle directional flow where the SVG exposes source and target
 - neutral current animation where direction is not available
 - contextual dimming for unrelated nodes and edges
 - reset to the default state when the user clicks non-interactive diagram space
+- a live, searchable node list built from the annotated nodes
+- a minimap showing the current viewport region
+- pan and zoom (drag, scroll, buttons, keyboard) with fit and 100% controls
+- a copy-Kroki-URL button wired to the shareable link (passed through automatically by the render step)
 
 Read `references/interactive-support.md` before promising identical behavior across every engine.
 
@@ -168,7 +171,7 @@ Treat `bpmn` as experimental until we have a stable passing smoke sample in this
 ## Resources
 
 - `scripts/render_kroki_diagram.py` renders curated Kroki engines and prints a shareable URL.
-- `scripts/build_diagram_index.py` builds a lightweight `index.html` overview for a directory of diagram artifacts.
+- `scripts/build_diagram_index.py` builds the `index.html` gallery for a directory of diagram artifacts (filter rail, search, grid/list, dark/light theme, empty state).
 - `references/use-case-taxonomy.md` maps user intent to diagram families and types.
 - `references/diagram-selection.md` explains which diagram family to choose.
 - `references/engine-matrix.md` explains when one engine is better than another.

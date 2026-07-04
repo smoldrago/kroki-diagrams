@@ -135,6 +135,7 @@ def main() -> int:
             svg_text=rendered.decode("utf-8"),
             output_path=interactive_path,
             title=title,
+            kroki_url=url,
         )
         print(f"Interactive HTML: {interactive_path}")
         print(
@@ -151,6 +152,7 @@ def main() -> int:
         "engine": args.engine,
         "format": args.format,
         "summary": args.summary or f"Rendered with {args.engine}.",
+        "kroki_url": url,
     }
     if interactive_summary:
         meta["interactive_tier"] = interactive_summary["tier"]

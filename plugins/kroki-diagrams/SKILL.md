@@ -1,5 +1,6 @@
 ---
 name: kroki-diagrams
+disable-model-invocation: true
 description: Create clean, readable diagrams using Kroki with a use-case-first selector. Use when the user wants repository-local diagrams for architecture, runtime topology, request flows, dependency graphs, schemas, planning structures, or tree-like repository layouts from code, docs, or natural-language descriptions. Prefer this skill when the user wants versionable diagram source and the right engine chosen for the job. Do not use it for generic UI mockups, freeform graphic design, image editing, screenshots, slide design, or non-diagram data visualization.
 ---
 

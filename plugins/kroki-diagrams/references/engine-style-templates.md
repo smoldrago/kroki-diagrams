@@ -116,7 +116,7 @@ digraph G {
     rankdir=LR,
     ranksep=1.2,
     nodesep=0.8,
-    splines=ortho,
+    splines=spline,
     overlap=false,
     remincross=true
   ]
@@ -191,6 +191,34 @@ flowchart LR
 
 Always define semantic `classDef` groups and assign them.
 For medium or large flowcharts, use `subgraph` blocks before writing cross-group edges.
+
+### Mermaid Gantt
+
+The flowchart init block does not style Gantt charts: they render about 580px wide in a serif font. Use this header instead:
+
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'fontFamily': 'Arial, sans-serif',
+    'fontSize': '14px',
+    'primaryColor': '#EEF4FB',
+    'primaryBorderColor': '#4A90D9',
+    'primaryTextColor': '#1A1A2E'
+  },
+  'gantt': {'useWidth': 1100, 'barHeight': 28, 'barGap': 6, 'fontSize': 14, 'sectionFontSize': 14, 'leftPadding': 140},
+  'themeCSS': 'text { font-family: Arial, Helvetica, sans-serif !important; }'
+}}%%
+gantt
+  dateFormat YYYY-MM-DD
+  axisFormat %b %d
+```
+
+Keep task names short enough to fit inside their bar. Mermaid moves labels that do not fit outside the bar, where they collide with grid lines and neighboring bars.
+
+## PlantUML WBS And Mind Maps
+
+`@startwbs` lays every level-2 branch side by side, so 6 or more branches produce a very wide strip. With 6 or more top-level branches, use `@startmindmap` with a `left side` marker halfway through the branches, which keeps the result near 3:1. Otherwise, split the WBS into two diagrams.
 
 ## ERD Engine In This Skill
 

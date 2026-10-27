@@ -566,6 +566,14 @@ VIEWER_SCRIPT = """
   const MIN_SCALE = 0.08;
   const MAX_SCALE = 3.5;
 
+  // getBBox() is in viewBox units, but Graphviz sizes the svg in pt (1pt = 1.33px).
+  // Pin one viewBox unit to one CSS px so fit/zoom math matches what is drawn.
+  const vb = svg.viewBox && svg.viewBox.baseVal;
+  if (vb && vb.width > 0 && vb.height > 0) {
+    svg.setAttribute("width", vb.width);
+    svg.setAttribute("height", vb.height);
+  }
+
   const rawBounds = svg.getBBox();
   const bounds = (rawBounds.width > 0 && rawBounds.height > 0) ? rawBounds : null;
 

@@ -45,7 +45,7 @@ Start dense structure diagrams with:
 ```dot
 graph [
   rankdir=LR,
-  splines=ortho,
+  splines=spline,
   nodesep=0.8,
   ranksep=1.2,
   overlap=false,
@@ -55,8 +55,9 @@ graph [
 
 Use:
 
-- `splines=ortho` first for right-angle routes
-- `splines=polyline` if ortho becomes too rigid
+- `splines=spline` as the default: every edge keeps its own visible path
+- `splines=polyline` when curves look busy but edges must stay distinguishable
+- `splines=ortho` only for small pipelines or trees (roughly 12 edges or fewer, at most 2 outgoing edges per node, no edge labels). Ortho routing merges parallel edges into shared trunks, so a reader cannot tell which source feeds which target, and it places edge labels away from their edges
 - `rank=same` blocks to force peers onto one layer
 - clusters for major subsystems before drawing cross-cluster edges
 

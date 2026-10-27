@@ -16,10 +16,12 @@ Create repository-friendly visual artifacts that stay readable under change. Thi
 4. Choose the output location and folder structure using `references/output-placement.md`.
 5. Apply the readability rules in `references/style-guide.md`, the engine scaffold in `references/engine-style-templates.md`, and the layout constraints in `references/layout-control.md`.
 6. Write the diagram source or structured text artifact.
-7. Render it with `scripts/render_kroki_diagram.py` only if it is a Kroki-backed diagram.
-8. Let the render step create or update the shared `index.html` in the artifact base unless there is a strong reason not to.
-9. If click-based exploration would help, read `references/interactive-support.md` and emit an `interactive.html` wrapper.
-10. Return the rendered output, any Kroki URL if generated, the source files used, and the artifact code.
+7. Render it with `scripts/render_kroki_diagram.py` only if it is a Kroki-backed diagram. Pass `--summary "<one line saying what the diagram shows>"` so the gallery card describes it.
+8. Look at the rendered output before returning it: check its proportions, check for edges passing through nodes or labels, and fix and re-render if needed.
+9. Let the render step create or update the shared `index.html` in the artifact base unless there is a strong reason not to.
+10. Only emit an `interactive.html` wrapper when the user asks for something clickable or explorable, or when the diagram has more than about 15 nodes. Read `references/interactive-support.md` first.
+11. Re-read the request. Every component, constraint, and grouping the user named must appear. For example, "across two availability zones" means the workloads are drawn in each zone.
+12. Return the rendered output, any Kroki URL if generated, the source files used, and the artifact code.
 
 ## Choose The Right Diagram Family
 
@@ -84,14 +86,18 @@ Non-negotiable rules:
 - Follow the cross-engine palette and contrast rules unless the user asks for a different visual direction.
 - Force a dominant layout direction and add grouping or rank hints before allowing a large flat graph.
 - Split diagrams instead of forcing a single diagram past a readable edge count.
+- Keep the rendered aspect ratio between 1:2 and 3:1, at most about 1600px wide. Sequence diagrams may be taller.
+- In Graphviz, use `splines=spline` by default. `splines=ortho` merges edges into shared trunks and should only be used for small pipelines.
 
 ## Rendering
 
 Use:
 
 ```bash
-python3 scripts/render_kroki_diagram.py --engine plantuml --input /path/to/diagram.puml --output /path/to/diagram.svg
+python3 scripts/render_kroki_diagram.py --engine plantuml --input /path/to/<artifact>/source.puml --output /path/to/<artifact>/rendered.svg --summary "Checkout request flow from web to Stripe"
 ```
+
+The gallery and viewer title comes from the artifact folder name, so give the folder a descriptive name.
 
 or:
 

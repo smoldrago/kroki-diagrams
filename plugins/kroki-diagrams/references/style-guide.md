@@ -27,6 +27,15 @@ The goal is legibility first.
 - Do not attach quality or support layers to every box unless the user explicitly wants that level of completeness.
 - Do not let long curved support arrows dominate the visual composition.
 - Do not force more than roughly 15 edges into one diagram if two diagrams would explain it more clearly.
+- Do not let edges merge into shared trunks or pass through other nodes, cluster titles, or labels. If they do, change the routing (see `layout-control.md`) or split the diagram.
+
+## Proportions
+
+Diagrams are usually viewed shrunk to fit a doc column or screen, so a long strip becomes unreadable.
+
+- Aim for a rendered aspect ratio between 1:2 and 3:1, and about 1600px wide at most. Sequence diagrams may be taller.
+- If left-to-right layout produces a strip, switch to top-down, stack groups into rows with `rank=same` or `together`, move external systems below the main flow instead of after it, or split the diagram.
+- Check the width and height of the rendered SVG before returning it.
 
 ## Good Defaults
 

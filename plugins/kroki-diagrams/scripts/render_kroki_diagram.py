@@ -3,6 +3,7 @@ import argparse
 import base64
 import json
 import pathlib
+import re
 import subprocess
 import sys
 import zlib
@@ -18,6 +19,21 @@ SUPPORTED_ENGINES = [
     "bpmn",
     "erd",
 ]
+
+# Source files follow the `<artifact-name>/source.<ext>` convention, so these
+# stems carry no meaning and the artifact folder name is used as the title.
+GENERIC_STEMS = {"source", "diagram", "main", "index"}
+
+# PlantUML sizes each <text> with the Kroki server's font metrics via textLength.
+# Browsers render Arial narrower, so the gap is spread between glyphs ("1 0").
+TEXT_LENGTH_ATTRS = re.compile(rb'\s(?:textLength|lengthAdjust)="[^"]*"')
+
+
+def artifact_title(input_path: pathlib.Path) -> str:
+    name = input_path.stem
+    if name.lower() in GENERIC_STEMS and input_path.parent.name:
+        name = input_path.parent.name
+    return name.replace("-", " ").replace("_", " ").title()
 
 
 def build_kroki_url(engine: str, fmt: str, source: str) -> str:
@@ -96,7 +112,9 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    input_path = pathlib.Path(args.input)
+    # Resolve so a relative `--input source.dot` still yields the artifact folder name
+    # and the index lands in the folder above the artifact, not inside it.
+    input_path = pathlib.Path(args.input).resolve()
     source = input_path.read_text(encoding="utf-8")
     url = build_kroki_url(args.engine, args.format, source)
 
@@ -104,7 +122,7 @@ def main() -> int:
         print(url)
         return 0
 
-    output_path = pathlib.Path(args.output) if args.output else input_path.with_suffix(f".{args.format}")
+    output_path = pathlib.Path(args.output).resolve() if args.output else input_path.with_suffix(f".{args.format}")
 
     try:
         rendered = render(args.engine, args.format, source)
@@ -120,6 +138,9 @@ def main() -> int:
         print(f"Kroki URL: {url}", file=sys.stderr)
         return 1
 
+    if args.format == "svg" and args.engine in ("plantuml", "c4plantuml"):
+        rendered = TEXT_LENGTH_ATTRS.sub(b"", rendered)
+
     output_path.write_bytes(rendered)
     print(f"Rendered: {output_path}")
 
@@ -129,7 +150,7 @@ def main() -> int:
             print("Interactive build failed: --interactive-output requires --format svg", file=sys.stderr)
             return 1
         interactive_path = pathlib.Path(args.interactive_output)
-        title = args.interactive_title or input_path.stem.replace("-", " ").title()
+        title = args.interactive_title or artifact_title(input_path)
         interactive_summary = build_interactive_html_file(
             engine=args.engine,
             svg_text=rendered.decode("utf-8"),
@@ -146,7 +167,7 @@ def main() -> int:
         )
 
     artifact_dir = output_path.parent
-    title = args.interactive_title or input_path.stem.replace("-", " ").title()
+    title = args.interactive_title or artifact_title(input_path)
     meta = {
         "title": title,
         "engine": args.engine,
